@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
 <title>Cannes 2026 — Daily Schedule</title>
 <link rel="icon" type="image/svg+xml" href="logo_2026.svg">
 <style>
@@ -335,6 +337,93 @@
   .schedule-empty .hint { margin-top: 8px; font-size: 12px; }
 
   .hidden { display: none !important; }
+
+  /* ============================================================
+     Mobile / narrow viewport (≤ 768px)
+     ============================================================ */
+  @media (max-width: 768px) {
+    header { padding: 10px 14px 8px; }
+    h1 { font-size: 17px; }
+    .sub { font-size: 12px; }
+
+    .tabs { margin-top: 10px; gap: 2px; }
+    .tab { padding: 6px 10px; font-size: 12px; }
+    .tab .count { padding: 1px 6px; font-size: 10px; margin-left: 4px; }
+
+    .controls { gap: 8px; margin-top: 8px; }
+    .stats, .data-source { font-size: 11px; }
+    .data-source { display: none; }
+
+    /* Day buttons become a horizontal-scrolling strip */
+    .day-buttons {
+      overflow-x: auto; flex-wrap: nowrap;
+      gap: 5px; padding-bottom: 4px;
+      max-width: 100%;
+      -webkit-overflow-scrolling: touch;
+    }
+    .day-buttons::-webkit-scrollbar { height: 0; }
+    .day-btn { padding: 5px 9px; font-size: 12px; flex: 0 0 auto; }
+
+    .schedule-mode { gap: 2px; }
+    .mode-btn { padding: 5px 10px; font-size: 12px; }
+
+    /* Filter bar: stack groups vertically; wider inputs */
+    .filters { padding: 10px 14px; gap: 8px; flex-direction: column; align-items: stretch; }
+    .filter-group { width: 100%; }
+    .search-input { width: 100%; }
+    .dd-btn { min-width: 0; max-width: 100%; width: 100%; }
+    .dd-menu { left: 0; right: 0; min-width: 0; max-height: 60vh; }
+    .time-inputs { flex-wrap: wrap; }
+
+    .legend { padding: 8px 14px; font-size: 11px; gap: 6px 10px; }
+    .legend-item { gap: 4px; }
+    .legend-swatch { width: 12px; height: 12px; }
+
+    /* Gantt — narrower Y axis, tighter rows */
+    .chart-wrap { max-height: calc(100vh - 320px); }
+    .chart { grid-template-columns: 110px 1fr; }
+    .y-cell { padding: 4px 6px; font-size: 11px; }
+    .timeline { height: 28px; }
+    .tick { font-size: 10px; padding-top: 5px; }
+
+    /* Bigger touch target for the star + slightly larger bar text */
+    .bar { padding: 4px 26px 4px 6px; font-size: 11px; }
+    .bar .meta { font-size: 10px; margin-top: 1px; }
+    .bar .star {
+      top: 3px; right: 3px;
+      width: 22px; height: 22px;
+      font-size: 14px;
+    }
+
+    /* My-schedule list: stack columns into cards */
+    .schedule-list { padding: 12px 14px; }
+    .day-block-header { font-size: 13px; }
+    .pick-row {
+      grid-template-columns: 1fr auto;
+      grid-template-areas:
+        "time   remove"
+        "title  title"
+        "meta   meta"
+        "venue  venue";
+      gap: 4px 8px;
+      padding: 10px 12px;
+    }
+    .pick-row .time   { grid-area: time; }
+    .pick-row .remove { grid-area: remove; padding: 6px 12px; font-size: 16px; }
+    .pick-row > div:nth-child(2) { grid-area: title; }
+    .pick-row > div:nth-child(3) { grid-area: meta; }
+    .pick-row > div:nth-child(4) { grid-area: venue; }
+    .pick-row .title { white-space: normal; }
+
+    /* Tooltip — slightly larger so it's readable on phone */
+    #tip { font-size: 12px; max-width: 260px; padding: 10px 12px; }
+    #tip .t-title { font-size: 13px; }
+  }
+
+  /* Devices without hover (touch): no underline-on-hover etc. */
+  @media (hover: none) {
+    .bar:hover { transform: none; }
+  }
 </style>
 </head>
 <body>
@@ -1038,8 +1127,20 @@ async function loadCSV() {
     r.startMin = parseTime(r.Time);
     r.durMin   = parseDuration(r.Duration);
     r.id       = filmId(r);
+    // Festival convention: a screening starting before 06:00 belongs to the
+    // *previous* calendar day's late-night programming. Reassign its display
+    // date and shift its start to >24:00 so it lays out at the right edge.
+    if (r.startMin < 6 * 60) {
+      const d = new Date(r.Date + 'T12:00:00');
+      d.setDate(d.getDate() - 1);
+      r.dispDate     = d.toISOString().slice(0, 10);
+      r.dispStartMin = r.startMin + 24 * 60;
+    } else {
+      r.dispDate     = r.Date;
+      r.dispStartMin = r.startMin;
+    }
   });
-  DATES = [...new Set(ALL_ROWS.map(r => r.Date))].sort();
+  DATES = [...new Set(ALL_ROWS.map(r => r.dispDate))].sort();
   currentDate  = DATES[0];
   scheduleDate = DATES[0];
 
@@ -1170,12 +1271,12 @@ function bindFilterActions() {
 // Sections / location groups present on the currently selected day (BEFORE other filters)
 function currentDaySections() {
   const d = currentDate;
-  return ALL_SECTIONS.filter(s => ALL_ROWS.some(r => r.Date === d && r.Section === s));
+  return ALL_SECTIONS.filter(s => ALL_ROWS.some(r => r.dispDate === d && r.Section === s));
 }
 function currentDayLocationGroups() {
   const d = currentDate;
   return LOCATION_GROUPS_ALL.filter(g =>
-    ALL_ROWS.some(r => r.Date === d && locationGroup(r.Location) === g));
+    ALL_ROWS.some(r => r.dispDate === d && locationGroup(r.Location) === g));
 }
 
 function summarizeSelection(allItems, selectedSet, allLabel, oneLabel) {
@@ -1286,6 +1387,9 @@ function setupDropdowns() {
 // Tooltip
 // ============================================================
 const tip = document.getElementById('tip');
+// Tracks the film currently pinned by tap/click. Hover ignores any film
+// while something is pinned, so the pinned tooltip stays put.
+let pinnedFilm = null;
 function showTip(e, r) {
   const isSaved = mySchedule.has(r.id);
   tip.innerHTML = `
@@ -1305,6 +1409,13 @@ function moveTip(e) {
   tip.style.left = x+'px'; tip.style.top = y+'px';
 }
 function hideTip() { tip.classList.remove('show'); }
+
+// Tap anywhere outside a bar dismisses the pinned tooltip.
+document.addEventListener('click', e => {
+  if (pinnedFilm && !e.target.closest('.bar')) {
+    pinnedFilm = null; hideTip();
+  }
+});
 
 // ============================================================
 // Master render: dispatches based on currentView
@@ -1336,7 +1447,7 @@ function render() {
     });
   } else if (scheduleMode === 'gantt') {
     dayBtnsRoot.classList.remove('hidden');
-    const daysWithPicks = new Set(ALL_ROWS.filter(r => mySchedule.has(r.id)).map(r => r.Date));
+    const daysWithPicks = new Set(ALL_ROWS.filter(r => mySchedule.has(r.id)).map(r => r.dispDate));
     if (!daysWithPicks.has(scheduleDate)) {
       const first = [...daysWithPicks].sort()[0];
       if (first) scheduleDate = first;
@@ -1366,13 +1477,15 @@ function renderAllView() {
   rebuildSectionDropdown();
   rebuildLocationDropdown();
 
-  const allDayRows = ALL_ROWS.filter(r => r.Date === currentDate);
+  const allDayRows = ALL_ROWS.filter(r => r.dispDate === currentDate);
   const q = filterState.search;
   const dayRows = allDayRows.filter(r => {
     if (!filterState.sections.has(r.Section)) return false;
     if (!filterState.locations.has(locationGroup(r.Location))) return false;
-    if (filterState.timeFrom != null && r.startMin < filterState.timeFrom) return false;
-    if (filterState.timeTo   != null && (r.startMin + r.durMin) > filterState.timeTo) return false;
+    // Time filter compares against the *displayed* position so midnight
+    // screenings (now at >24:00 on the previous day) line up with the chart.
+    if (filterState.timeFrom != null && r.dispStartMin < filterState.timeFrom) return false;
+    if (filterState.timeTo   != null && (r.dispStartMin + r.durMin) > filterState.timeTo) return false;
     if (q) {
       const hay = ((r['Film Title']||'') + ' ' + (r.Director||'')).toLowerCase();
       if (!hay.includes(q)) return false;
@@ -1393,7 +1506,7 @@ function renderAllView() {
 // "My Schedule — Gantt" view
 // ============================================================
 function renderScheduleGantt() {
-  const picks = ALL_ROWS.filter(r => mySchedule.has(r.id) && r.Date === scheduleDate);
+  const picks = ALL_ROWS.filter(r => mySchedule.has(r.id) && r.dispDate === scheduleDate);
   document.getElementById('stats').textContent =
     `${mySchedule.size} pick${mySchedule.size===1?'':'s'} total · ${picks.length} on ${dayLabel(scheduleDate)}`;
   drawLegend(picks);
@@ -1407,9 +1520,9 @@ function renderScheduleList() {
   const list = document.getElementById('scheduleList');
   list.innerHTML = '';
   const picks = ALL_ROWS.filter(r => mySchedule.has(r.id))
-                       .sort((a,b) => a.Date.localeCompare(b.Date) || a.startMin - b.startMin);
+                       .sort((a,b) => a.dispDate.localeCompare(b.dispDate) || a.dispStartMin - b.dispStartMin);
   document.getElementById('stats').textContent =
-    `${picks.length} pick${picks.length===1?'':'s'} across ${new Set(picks.map(p=>p.Date)).size} day(s)`;
+    `${picks.length} pick${picks.length===1?'':'s'} across ${new Set(picks.map(p=>p.dispDate)).size} day(s)`;
 
   if (picks.length === 0) {
     list.innerHTML = `<div class="schedule-empty">
@@ -1421,7 +1534,7 @@ function renderScheduleList() {
 
   // Group by date
   const byDate = {};
-  picks.forEach(p => { (byDate[p.Date] ||= []).push(p); });
+  picks.forEach(p => { (byDate[p.dispDate] ||= []).push(p); });
   Object.keys(byDate).sort().forEach(date => {
     const dayPicks = byDate[date];
     // Detect conflicts: two picks whose time ranges overlap.
@@ -1429,7 +1542,7 @@ function renderScheduleList() {
     for (let i=0;i<dayPicks.length;i++) {
       for (let j=i+1;j<dayPicks.length;j++) {
         const a=dayPicks[i], b=dayPicks[j];
-        if (a.startMin < b.startMin + b.durMin && b.startMin < a.startMin + a.durMin) {
+        if (a.dispStartMin < b.dispStartMin + b.durMin && b.dispStartMin < a.dispStartMin + a.durMin) {
           conflictIds.add(a.id); conflictIds.add(b.id);
         }
       }
@@ -1476,7 +1589,7 @@ function countConflictPairs(rows) {
   for (let i=0;i<rows.length;i++) {
     for (let j=i+1;j<rows.length;j++) {
       const a=rows[i], b=rows[j];
-      if (a.startMin < b.startMin + b.durMin && b.startMin < a.startMin + a.durMin) n++;
+      if (a.dispStartMin < b.dispStartMin + b.durMin && b.dispStartMin < a.dispStartMin + a.durMin) n++;
     }
   }
   return n;
@@ -1527,9 +1640,10 @@ function drawChart(rows) {
   const locations = LOCATION_ORDER.filter(l => present.has(l));
   [...present].forEach(l => { if (!locations.includes(l)) locations.push(l); });
 
-  // Time window snapped to whole hours
-  const minStart = Math.min(...rows.map(r => r.startMin));
-  const maxEnd   = Math.max(...rows.map(r => r.startMin + r.durMin));
+  // Time window snapped to whole hours (uses display position so a midnight
+  // screening reassigned to its previous day extends past 24:00).
+  const minStart = Math.min(...rows.map(r => r.dispStartMin));
+  const maxEnd   = Math.max(...rows.map(r => r.dispStartMin + r.durMin));
   const DAY_START = Math.max(0, Math.floor(minStart/60)*60);
   const DAY_END   = Math.ceil(maxEnd/60)*60;
   const TOTAL_MIN = DAY_END - DAY_START;
@@ -1554,16 +1668,16 @@ function drawChart(rows) {
 
   const SUB_HEIGHT = 56;
   locations.forEach(loc => {
-    const films = rows.filter(r => r.Location === loc).sort((a,b) => a.startMin - b.startMin);
+    const films = rows.filter(r => r.Location === loc).sort((a,b) => a.dispStartMin - b.dispStartMin);
     // Sub-track assignment so overlaps stack
     const trackEnds = [], trackOf = [];
     films.forEach((r, i) => {
       let placed = -1;
       for (let t = 0; t < trackEnds.length; t++) {
-        if (trackEnds[t] <= r.startMin) { placed = t; break; }
+        if (trackEnds[t] <= r.dispStartMin) { placed = t; break; }
       }
-      if (placed === -1) { placed = trackEnds.length; trackEnds.push(r.startMin + r.durMin); }
-      else { trackEnds[placed] = r.startMin + r.durMin; }
+      if (placed === -1) { placed = trackEnds.length; trackEnds.push(r.dispStartMin + r.durMin); }
+      else { trackEnds[placed] = r.dispStartMin + r.durMin; }
       trackOf[i] = placed;
     });
     const numTracks = Math.max(1, trackEnds.length);
@@ -1592,7 +1706,7 @@ function drawChart(rows) {
     }
 
     films.forEach((r, i) => {
-      const left  = (r.startMin - DAY_START) * PX_PER_MIN;
+      const left  = (r.dispStartMin - DAY_START) * PX_PER_MIN;
       const width = Math.max(r.durMin * PX_PER_MIN, 30);
       const top   = trackOf[i] * SUB_HEIGHT + 4;
       const height = SUB_HEIGHT - 8;
@@ -1628,9 +1742,15 @@ function drawChart(rows) {
       bar.appendChild(metaEl);
       bar.appendChild(star);
 
-      bar.addEventListener('mouseenter', e => showTip(e, r));
-      bar.addEventListener('mousemove', moveTip);
-      bar.addEventListener('mouseleave', hideTip);
+      // Hover for desktop, click/tap to pin for mobile.
+      bar.addEventListener('mouseenter', e => { if (!pinnedFilm) showTip(e, r); });
+      bar.addEventListener('mousemove',  e => { if (!pinnedFilm) moveTip(e); });
+      bar.addEventListener('mouseleave', () => { if (!pinnedFilm) hideTip(); });
+      bar.addEventListener('click', e => {
+        e.stopPropagation();
+        if (pinnedFilm === r) { pinnedFilm = null; hideTip(); }
+        else                  { pinnedFilm = r; showTip(e, r); }
+      });
 
       lane.appendChild(bar);
     });
