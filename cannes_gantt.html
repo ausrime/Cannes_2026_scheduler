@@ -1,0 +1,1643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Cannes 2026 — Daily Schedule</title>
+<link rel="icon" type="image/svg+xml" href="logo_2026.svg">
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --panel-2: #1f232c;
+    --text: #e8eaf0;
+    --muted: #8a93a4;
+    --line: #2a2f3a;
+    --accent: #f5c518;
+    --row-alt: #14171d;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  header {
+    padding: 14px 24px 10px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, #14171d, #0f1115);
+    position: sticky; top: 0; z-index: 20;
+  }
+  h1 { margin: 0 0 4px; font-size: 22px; font-weight: 600; letter-spacing: 0.3px; }
+  .sub { color: var(--muted); font-size: 13px; }
+
+  .tabs { display: flex; gap: 4px; margin-top: 12px; }
+  .tab {
+    padding: 7px 14px; background: transparent; border: 1px solid var(--line);
+    border-radius: 6px 6px 0 0; color: var(--muted); font-size: 13px; cursor: pointer;
+    border-bottom: none;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active {
+    background: var(--panel); color: var(--text); border-color: var(--line);
+    font-weight: 600;
+  }
+  .tab .count {
+    margin-left: 6px; padding: 1px 7px; border-radius: 10px;
+    background: var(--panel-2); color: var(--muted); font-size: 11px; font-weight: 500;
+  }
+  .tab.active .count { background: var(--accent); color: #1a1a1a; }
+
+  .controls {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 10px;
+  }
+  .day-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+  .day-btn {
+    padding: 6px 12px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .day-btn:hover { background: #262b36; }
+  .day-btn.active {
+    background: var(--accent); color: #1a1a1a; border-color: var(--accent); font-weight: 600;
+  }
+  .day-btn[disabled] { opacity: 0.35; cursor: not-allowed; }
+
+  .schedule-mode { display: flex; gap: 4px; }
+  .mode-btn {
+    padding: 6px 12px; background: var(--panel-2); border: 1px solid var(--line);
+    color: var(--muted); font-size: 13px; cursor: pointer; border-radius: 6px;
+  }
+  .mode-btn:hover { color: var(--text); }
+  .mode-btn.active { background: var(--accent); color: #1a1a1a; border-color: var(--accent); font-weight: 600; }
+
+  .stats { color: var(--muted); font-size: 12px; margin-left: auto; }
+  .data-source {
+    color: var(--muted); font-size: 11px; opacity: 0.7;
+  }
+
+  /* Filters */
+  .filters {
+    display: flex; flex-wrap: wrap; align-items: center;
+    gap: 8px 14px;
+    padding: 10px 24px;
+    background: #12151b;
+    border-bottom: 1px solid var(--line);
+  }
+  .filter-group { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .filter-label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px;
+    color: var(--muted); font-weight: 600;
+  }
+
+  .search-input {
+    background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 6px;
+    padding: 6px 10px; font-size: 13px;
+    width: 220px;
+  }
+  .search-input::placeholder { color: var(--muted); }
+  .search-input:focus { outline: none; border-color: var(--accent); }
+
+  /* Custom multi-select dropdown */
+  .dd { position: relative; }
+  .dd-btn {
+    background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 6px;
+    padding: 6px 28px 6px 10px; font-size: 12.5px; cursor: pointer;
+    min-width: 150px; max-width: 240px;
+    text-align: left;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    position: relative;
+  }
+  .dd-btn:hover { border-color: #3a4150; }
+  .dd-btn::after {
+    content: '▾'; position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-size: 10px;
+  }
+  .dd-btn .pill {
+    display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 9px;
+    background: var(--accent); color: #1a1a1a; font-size: 10.5px; font-weight: 600;
+  }
+  .dd-menu {
+    position: absolute; top: calc(100% + 4px); left: 0; z-index: 50;
+    background: #1a1d24; border: 1px solid var(--line); border-radius: 8px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+    min-width: 260px; max-height: 380px; overflow: hidden;
+    display: none; flex-direction: column;
+  }
+  .dd.open .dd-menu { display: flex; }
+  .dd-menu-actions {
+    display: flex; gap: 6px; padding: 8px 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .dd-menu-actions button {
+    background: transparent; border: 1px solid var(--line); color: var(--muted);
+    border-radius: 4px; padding: 2px 8px; font-size: 10.5px; cursor: pointer;
+    text-transform: uppercase; letter-spacing: 0.4px;
+  }
+  .dd-menu-actions button:hover { color: var(--text); border-color: #3a4150; }
+  .dd-options { overflow-y: auto; padding: 4px 0; }
+  .dd-option {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 12px; cursor: pointer; font-size: 12.5px;
+    color: var(--text); user-select: none;
+  }
+  .dd-option:hover { background: var(--panel-2); }
+  .dd-option .dd-check {
+    width: 14px; height: 14px; border-radius: 3px;
+    border: 1px solid var(--line); background: var(--panel);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: 11px; color: #1a1a1a;
+  }
+  .dd-option.checked .dd-check { background: var(--accent); border-color: var(--accent); }
+  .dd-option.checked .dd-check::before { content: '✓'; font-weight: bold; }
+  .dd-option .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .dd-empty { padding: 14px; color: var(--muted); font-size: 12px; text-align: center; }
+
+  .time-inputs { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
+  .time-inputs input[type="time"] {
+    background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 4px;
+    padding: 4px 6px; font-size: 12px;
+    color-scheme: dark;
+  }
+  .time-inputs span { color: var(--muted); }
+  .time-quick { display: inline-flex; gap: 4px; margin-left: 4px; }
+  .time-quick button {
+    background: var(--panel-2); border: 1px solid var(--line); color: var(--muted);
+    border-radius: 4px; padding: 2px 6px; font-size: 10.5px; cursor: pointer;
+  }
+  .time-quick button:hover { color: var(--text); border-color: #3a4150; }
+  .time-clear-btn {
+    background: transparent; border: 1px solid var(--line); color: var(--muted);
+    border-radius: 4px; padding: 2px 8px; font-size: 10.5px; cursor: pointer;
+    text-transform: uppercase; letter-spacing: 0.4px; margin-left: 4px;
+  }
+  .time-clear-btn:hover { color: var(--text); border-color: #3a4150; }
+
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 8px 14px; padding: 10px 24px;
+    background: var(--panel); border-bottom: 1px solid var(--line); font-size: 12px;
+    min-height: 36px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+  .legend-swatch { width: 14px; height: 14px; border-radius: 3px; }
+  .legend-empty { color: var(--muted); font-style: italic; }
+
+  .chart-wrap { padding: 0; overflow: auto; max-height: calc(100vh - 290px); }
+  .chart {
+    position: relative;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+  }
+  .y-header, .x-header {
+    position: sticky;
+    background: var(--panel);
+    z-index: 10;
+    border-bottom: 1px solid var(--line);
+  }
+  .y-header { top: 0; left: 0; z-index: 12; border-right: 1px solid var(--line); }
+  .x-header { top: 0; }
+
+  .y-axis { background: var(--panel); border-right: 1px solid var(--line); position: sticky; left: 0; z-index: 5; }
+  .y-cell {
+    padding: 6px 10px;
+    display: flex; align-items: center;
+    font-size: 12px;
+    border-bottom: 1px solid var(--line);
+    line-height: 1.25;
+  }
+  .y-cell:nth-child(even) { background: var(--row-alt); }
+
+  .grid { position: relative; }
+  .timeline { position: relative; height: 36px; border-bottom: 1px solid var(--line); }
+  .tick {
+    position: absolute; top: 0; bottom: 0;
+    border-left: 1px solid var(--line);
+    color: var(--muted); font-size: 11px; padding: 8px 0 0 4px;
+    width: 1px;
+  }
+  .tick.major { border-left-color: #3a4150; color: var(--text); }
+  .tick-label { position: absolute; left: 4px; white-space: nowrap; }
+
+  .lanes { position: relative; }
+  .lane {
+    border-bottom: 1px solid var(--line);
+    position: relative;
+  }
+  .lane:nth-child(even) { background: var(--row-alt); }
+  .sub-divider {
+    position: absolute; left: 0; right: 0;
+    border-top: 1px dashed rgba(255,255,255,0.06);
+    pointer-events: none;
+  }
+  .lane-grid {
+    position: absolute; inset: 0;
+    background-image: linear-gradient(to right, var(--line) 1px, transparent 1px);
+    background-size: var(--hour-px) 100%;
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .bar {
+    position: absolute;
+    border-radius: 5px;
+    padding: 4px 22px 4px 8px;
+    overflow: hidden;
+    cursor: pointer;
+    color: #0d0d0d;
+    font-size: 11.5px;
+    line-height: 1.2;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    border: 1px solid rgba(0,0,0,0.15);
+    transition: transform 0.1s, box-shadow 0.1s, z-index 0s;
+  }
+  .bar:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+    z-index: 4 !important;
+  }
+  .bar.saved { box-shadow: 0 0 0 2px var(--accent), 0 4px 12px rgba(0,0,0,0.5); }
+  .bar .title { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar .meta { font-weight: 400; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10.5px; margin-top: 2px; }
+  .bar .star {
+    position: absolute; top: 4px; right: 4px;
+    width: 18px; height: 18px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.18); border-radius: 50%;
+    font-size: 13px; cursor: pointer; line-height: 1;
+    color: rgba(0,0,0,0.55);
+    transition: transform 0.1s;
+  }
+  .bar .star:hover { transform: scale(1.15); color: rgba(0,0,0,0.85); }
+  .bar.saved .star { background: #1a1a1a; color: var(--accent); }
+
+  .empty { padding: 60px 30px; text-align: center; color: var(--muted); }
+
+  /* Tooltip */
+  #tip {
+    position: fixed; pointer-events: none; z-index: 1000;
+    background: #0a0c10; color: #fff;
+    border: 1px solid #2a2f3a;
+    padding: 10px 12px; border-radius: 6px;
+    font-size: 12px; line-height: 1.4;
+    max-width: 320px; box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    opacity: 0; transition: opacity 0.1s;
+  }
+  #tip.show { opacity: 1; }
+  #tip .t-title { font-weight: 700; margin-bottom: 4px; font-size: 13px; }
+  #tip .t-row { color: #b8bdc8; }
+  #tip .t-row strong { color: #fff; }
+  #tip .t-hint { margin-top: 6px; color: var(--accent); font-size: 11px; }
+
+  /* My Schedule list view */
+  .schedule-list { padding: 18px 24px; }
+  .day-block { margin-bottom: 26px; }
+  .day-block-header {
+    font-size: 14px; font-weight: 600; color: var(--text);
+    padding-bottom: 8px; margin-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .day-block-header .count {
+    color: var(--muted); font-weight: 400; font-size: 12px;
+  }
+  .conflict-warn {
+    color: #ff7a5c; font-size: 11.5px; font-weight: 500;
+    padding: 2px 7px; background: rgba(255,122,92,0.12); border-radius: 10px;
+    border: 1px solid rgba(255,122,92,0.35);
+  }
+  .pick-row {
+    display: grid; grid-template-columns: 110px 1fr 1fr 220px 30px;
+    gap: 12px; padding: 10px 12px; border-radius: 6px;
+    background: var(--panel); margin-bottom: 4px;
+    align-items: center; font-size: 13px;
+  }
+  .pick-row.conflict { border-left: 3px solid #ff7a5c; padding-left: 9px; }
+  .pick-row .time { font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+  .pick-row .title { color: var(--text); }
+  .pick-row .director { color: var(--muted); font-size: 12px; }
+  .pick-row .venue { color: var(--muted); font-size: 12px; }
+  .pick-row .section-tag {
+    display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+    margin-right: 6px; vertical-align: middle;
+  }
+  .pick-row .remove {
+    background: transparent; border: 1px solid var(--line); color: var(--muted);
+    border-radius: 4px; cursor: pointer; padding: 4px 8px; font-size: 12px;
+  }
+  .pick-row .remove:hover { color: #ff7a5c; border-color: #ff7a5c; }
+  .schedule-empty {
+    padding: 60px 30px; text-align: center; color: var(--muted); font-size: 14px;
+  }
+  .schedule-empty .hint { margin-top: 8px; font-size: 12px; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Cannes Film Festival 2026 — Daily Gantt</h1>
+  <div class="sub">Plan your festival: filter, search, and bookmark screenings.</div>
+  <div class="tabs">
+    <button class="tab active" data-view="all">All Screenings</button>
+    <button class="tab" data-view="schedule">My Schedule <span class="count" id="picksCount">0</span></button>
+  </div>
+  <div class="controls">
+    <div class="day-buttons" id="dayButtons"></div>
+    <div class="schedule-mode hidden" id="scheduleMode">
+      <button class="mode-btn active" data-mode="list">List</button>
+      <button class="mode-btn" data-mode="gantt">Gantt</button>
+      <button class="filter-action" id="clearAllPicks" style="margin-left:8px;">Clear all</button>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="data-source" id="dataSource"></div>
+  </div>
+</header>
+
+<div class="filters" id="filtersBar">
+  <div class="filter-group">
+    <span class="filter-label">Search</span>
+    <input class="search-input" id="searchInput" type="text" placeholder="Title or director" />
+  </div>
+
+  <div class="filter-group">
+    <span class="filter-label">Sections</span>
+    <div class="dd" id="ddSections">
+      <button class="dd-btn" id="ddSectionsBtn" type="button">All sections</button>
+      <div class="dd-menu">
+        <div class="dd-menu-actions">
+          <button data-act="sec-all">All</button>
+          <button data-act="sec-none">None</button>
+        </div>
+        <div class="dd-options" id="sectionOptions"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="filter-group">
+    <span class="filter-label">Venues</span>
+    <div class="dd" id="ddLocations">
+      <button class="dd-btn" id="ddLocationsBtn" type="button">All venues</button>
+      <div class="dd-menu">
+        <div class="dd-menu-actions">
+          <button data-act="loc-all">All</button>
+          <button data-act="loc-none">None</button>
+        </div>
+        <div class="dd-options" id="locationOptions"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="filter-group">
+    <span class="filter-label">Time</span>
+    <div class="time-inputs">
+      <input type="time" id="timeFrom" />
+      <span>–</span>
+      <input type="time" id="timeTo" />
+      <span class="time-quick">
+        <button data-tw="morning">AM</button>
+        <button data-tw="afternoon">PM</button>
+        <button data-tw="evening">Eve</button>
+      </span>
+      <button class="time-clear-btn" data-act="time-clear">Any</button>
+    </div>
+  </div>
+</div>
+
+<div class="legend" id="legend"></div>
+
+<div class="chart-wrap" id="chartWrap">
+  <div class="chart" id="chart">
+    <div class="y-header" style="height: 36px;"></div>
+    <div class="x-header"><div class="timeline" id="timeline"></div></div>
+    <div class="y-axis" id="yAxis"></div>
+    <div class="grid"><div class="lanes" id="lanes"></div></div>
+  </div>
+</div>
+
+<div class="schedule-list hidden" id="scheduleList"></div>
+
+<div id="tip"></div>
+
+<script>
+// ============================================================
+// Embedded fallback CSV — used if fetch() fails (e.g. file://)
+// ============================================================
+const EMBEDDED_CSV = `Date,Time,Location,Section,Film Title,Director,Duration
+2026-05-12,21:30,Plage Macé Brigitte Bardot,Special Screenings,TOP GUN,Tony Scott,1h50
+2026-05-13,21:30,Plage Macé Brigitte Bardot,Special Screenings,SUPER EXPRESS 109 (THE BULLET TRAIN / SHINKANSEN DAIBAKUHA),Junya Satō,2h32
+2026-05-14,21:30,Plage Macé Brigitte Bardot,Special Screenings,LES CAPRICES DE L'ENFANT ROI (MOLIERE CYRANO AND THE YOUNG KING),Michel Leclerc,1h58
+2026-05-15,21:30,Plage Macé Brigitte Bardot,Special Screenings,UN HOMME ET UNE FEMME (A MAN AND A WOMAN),Claude Lelouch,1h42
+2026-05-16,21:30,Plage Macé Brigitte Bardot,Special Screenings,ALL THE PRESIDENT'S MEN (LES HOMMES DU PRÉSIDENT),Alan J. Pakula,2h18
+2026-05-17,21:30,Plage Macé Brigitte Bardot,Special Screenings,VIVA MARIA !,Louis Malle,2h02
+2026-05-18,21:30,Plage Macé Brigitte Bardot,Special Screenings,LAND AND FREEDOM,Ken Loach,1h49
+2026-05-19,21:30,Plage Macé Brigitte Bardot,Special Screenings,CRÍA CUERVOS,Carlos Saura,1h45
+2026-05-20,21:30,Plage Macé Brigitte Bardot,Special Screenings,CES MESSIEURS DAMES (THE BIRDS THE BEES AND THE ITALIANS / SIGNORE & SIGNORI),Pietro Germi,2h00
+2026-05-21,21:30,Plage Macé Brigitte Bardot,Special Screenings,JE HAIS LES ACTEURS (I HATE ACTORS),Gérard Krawczyk,1h30
+2026-05-22,21:30,Plage Macé Brigitte Bardot,Special Screenings,MON ONCLE,Jacques Tati,1h56
+2026-05-12,19:00,Grand Théâtre Lumière,Out of Competition,CÉRÉMONIE D'OUVERTURE / OPENING CEREMONY,,1h
+2026-05-12,20:00,Grand Théâtre Lumière,Out of Competition,LA VÉNUS ÉLECTRIQUE,Pierre Salvadori,2h02
+2026-05-12,23:15,Grand Théâtre Lumière,Out of Competition,LA VÉNUS ÉLECTRIQUE,Pierre Salvadori,2h02
+2026-05-13,15:00,Grand Théâtre Lumière,In Competition - Feature Films,NAGI NOTES (QUELQUES JOURS À NAGI),Fukada Koji,1h50
+2026-05-13,18:30,Grand Théâtre Lumière,In Competition - Feature Films,LA VIE D'UNE FEMME (A WOMAN'S LIFE),Charline Bourgeois-Tacquet,1h38
+2026-05-14,09:30,Grand Théâtre Lumière,In Competition - Feature Films,LA VIE D'UNE FEMME (A WOMAN'S LIFE),Charline Bourgeois-Tacquet,1h38
+2026-05-14,12:30,Grand Théâtre Lumière,In Competition - Feature Films,NAGI NOTES (QUELQUES JOURS À NAGI),Fukada Koji,1h50
+2026-05-14,18:00,Grand Théâtre Lumière,In Competition - Feature Films,FATHERLAND,Paweł Pawlikowski,1h22
+2026-05-14,20:30,Grand Théâtre Lumière,In Competition - Feature Films,HISTOIRES PARALLÈLES (PARALLEL TALES),Asghar Farhadi,2h20
+2026-05-15,08:30,Grand Théâtre Lumière,In Competition - Feature Films,FATHERLAND,Paweł Pawlikowski,1h22
+2026-05-15,10:30,Grand Théâtre Lumière,In Competition - Feature Films,HISTOIRES PARALLÈLES (PARALLEL TALES),Asghar Farhadi,2h20
+2026-05-15,14:00,Grand Théâtre Lumière,In Competition - Feature Films,SOUDAIN (ALL OF A SUDDEN),Hamaguchi Ryusuke,3h16
+2026-05-15,22:00,Grand Théâtre Lumière,In Competition - Feature Films,GENTLE MONSTER,Marie Kreutzer,1h54
+2026-05-16,08:00,Grand Théâtre Lumière,In Competition - Feature Films,SOUDAIN (ALL OF A SUDDEN),Hamaguchi Ryusuke,3h16
+2026-05-16,12:00,Grand Théâtre Lumière,In Competition - Feature Films,GENTLE MONSTER,Marie Kreutzer,1h54
+2026-05-16,15:00,Grand Théâtre Lumière,In Competition - Feature Films,SHEEP IN THE BOX,Koreeda Hirokazu,2h06
+2026-05-16,18:15,Grand Théâtre Lumière,In Competition - Feature Films,EL SER QUERIDO (THE BELOVED),Rodrigo Sorogoyen,2h15
+2026-05-16,21:45,Grand Théâtre Lumière,In Competition - Feature Films,PAPER TIGER,James Gray,1h55
+2026-05-17,08:30,Grand Théâtre Lumière,In Competition - Feature Films,PAPER TIGER,James Gray,1h55
+2026-05-17,11:30,Grand Théâtre Lumière,In Competition - Feature Films,EL SER QUERIDO (THE BELOVED),Rodrigo Sorogoyen,2h15
+2026-05-17,15:00,Grand Théâtre Lumière,In Competition - Feature Films,MOULIN,László Nemes,2h10
+2026-05-17,18:30,Grand Théâtre Lumière,In Competition - Feature Films,GARANCE,Jeanne Herry,2h00
+2026-05-17,21:30,Grand Théâtre Lumière,In Competition - Feature Films,HOPE,Na Hong-jin,2h40
+2026-05-18,08:30,Grand Théâtre Lumière,In Competition - Feature Films,GARANCE,Jeanne Herry,2h00
+2026-05-18,11:30,Grand Théâtre Lumière,In Competition - Feature Films,HOPE,Na Hong-jin,2h40
+2026-05-18,15:30,Grand Théâtre Lumière,In Competition - Feature Films,L'INCONNUE (THE UNKNOWN),Arthur Harari,2h19
+2026-05-18,19:00,Grand Théâtre Lumière,In Competition - Feature Films,FJORD,Cristian Mungiu,2h26
+2026-05-19,08:30,Grand Théâtre Lumière,In Competition - Feature Films,L'INCONNUE (THE UNKNOWN),Arthur Harari,2h19
+2026-05-19,11:45,Grand Théâtre Lumière,In Competition - Feature Films,FJORD,Cristian Mungiu,2h26
+2026-05-19,15:30,Grand Théâtre Lumière,In Competition - Feature Films,MINOTAUR,Andreï Zviaguintsev,2h15
+2026-05-19,19:00,Grand Théâtre Lumière,In Competition - Feature Films,AMARGA NAVIDAD,Pedro Almodóvar,1h52
+2026-05-20,08:30,Grand Théâtre Lumière,In Competition - Feature Films,MINOTAUR,Andreï Zviaguintsev,2h15
+2026-05-20,11:45,Grand Théâtre Lumière,In Competition - Feature Films,AMARGA NAVIDAD,Pedro Almodóvar,1h52
+2026-05-20,15:00,Grand Théâtre Lumière,In Competition - Feature Films,NOTRE SALUT,Emmanuel Marre,2h35
+2026-05-20,22:30,Grand Théâtre Lumière,In Competition - Feature Films,THE MAN I LOVE,Ira Sachs,1h35
+2026-05-21,08:30,Grand Théâtre Lumière,In Competition - Feature Films,THE MAN I LOVE,Ira Sachs,1h35
+2026-05-21,11:00,Grand Théâtre Lumière,In Competition - Feature Films,NOTRE SALUT,Emmanuel Marre,2h35
+2026-05-21,15:00,Grand Théâtre Lumière,In Competition - Feature Films,THE MAN I LOVE,Ira Sachs,1h35
+2026-05-21,18:00,Grand Théâtre Lumière,In Competition - Feature Films,LA BOLA NEGRA,Javier Calvo & Javier Ambrossi,2h35
+2026-05-21,22:00,Grand Théâtre Lumière,In Competition - Feature Films,COWARD,Lukas Dhont,2h00
+2026-05-22,08:30,Grand Théâtre Lumière,In Competition - Feature Films,LA BOLA NEGRA,Javier Calvo & Javier Ambrossi,2h35
+2026-05-22,12:00,Grand Théâtre Lumière,In Competition - Feature Films,COWARD,Lukas Dhont,2h00
+2026-05-22,15:00,Grand Théâtre Lumière,In Competition - Feature Films,DAS GETRÄUMTE ABENTEUER (THE DREAMED ADVENTURE),Valeska Grisebach,2h47
+2026-05-22,19:00,Grand Théâtre Lumière,In Competition - Feature Films,HISTOIRES DE LA NUIT (THE BIRTHDAY PARTY),Léa Mysius,1h54
+2026-05-23,20:15,Grand Théâtre Lumière,Out of Competition,CÉRÉMONIE DE CLÔTURE / CLOSING CEREMONY,,
+2026-05-13,09:00,Grand Théâtre Lumière,Out of Competition,LA VÉNUS ÉLECTRIQUE,Pierre Salvadori,2h02
+2026-05-13,11:00,Salle Debussy,Special Screenings,RENDEZ-VOUS AVEC / WITH PETER JACKSON,,1h30
+2026-05-13,15:15,Salle Debussy,Cannes Premiere,THE MATCH,Juan Cabral & Santiago Franco,1h31
+2026-05-13,15:45,Salle Buñuel,Cannes Premiere,CENIZA EN LA BOCA,Diego Luna,1h42
+2026-05-13,18:45,Salle Agnès Varda,Cannes Premiere,GROUNDSWELL,Josh Tickell & Rebecca Tickell,1h34
+2026-05-13,21:30,Grand Théâtre Lumière,Out of Competition,L'ABANDON (FORSAKEN),Vincent Garenq,1h40
+2026-05-14,18:30,Salle Agnès Varda,Cannes Premiere,TANGLES,Leah Nelson,1h42
+2026-05-14,21:00,Salle Agnès Varda,Special Screenings,LES CAPRICES DE L'ENFANT ROI (MOLIERE CYRANO AND THE YOUNG KING),Michel Leclerc,1h58
+2026-05-14,21:30,Salle Debussy,Cannes Premiere,MARIE MADELEINE,Géssica Généus,1h43
+2026-05-14,00:00,Grand Théâtre Lumière,Special Screenings,SANGUINE,Marion Le Corroller,1h43
+2026-05-15,14:30,Salle Agnès Varda,Cannes Premiere,CANTONA,David Tryhorn & Ben Nicholas,1h55
+2026-05-15,18:30,Grand Théâtre Lumière,Out of Competition,KARMA,Guillaume Canet,2h29
+2026-05-15,18:45,Salle Debussy,Cannes Premiere,PROPELLER ONE-WAY NIGHT COACH (VOL DE NUIT POUR LOS ANGELES),John Travolta,1h01
+2026-05-15,19:45,Salle Agnès Varda,Special Screenings,JOHN LENNON: THE LAST INTERVIEW,Steven Soderbergh,1h40
+2026-05-15,20:45,Salle Debussy,Cannes Premiere,SI TU PENSES BIEN (THINK GOOD),Géraldine Nakache,1h34
+2026-05-15,00:30,Grand Théâtre Lumière,Special Screenings,GUN-CHE (COLONY),Yeon Sang-ho,2h03
+2026-05-16,15:15,Salle Agnès Varda,Cannes Premiere,REHEARSALS FOR A REVOLUTION,Pegah Ahangarani,1h35
+2026-05-16,19:15,Salle Debussy,Cannes Premiere,HEIMSUCHUNG (LE BOIS DE KLARA / VISITATION),Volker Schlöndorff,1h58
+2026-05-16,19:30,Salle Agnès Varda,Cannes Premiere,LES MATINS MERVEILLEUX,Avril Besson,1h27
+2026-05-16,00:30,Grand Théâtre Lumière,Special Screenings,FULL PHIL,Quentin Dupieux,1h18
+2026-05-17,14:30,Salle Buñuel,Special Screenings,RENDEZ-VOUS AVEC / WITH CATE BLANCHETT,,1h30
+2026-05-17,18:45,Salle Agnès Varda,Cannes Premiere,AVEDON,Ron Howard,1h44
+2026-05-17,19:15,Salle Debussy,Cannes Premiere,LA TROISIÈME NUIT (WHEN THE NIGHT FALLS),Daniel Auteuil,1h40
+2026-05-17,00:30,Grand Théâtre Lumière,Special Screenings,JIM QUEEN,Marco Nguyen & Nicolas Athané,1h25
+2026-05-18,16:00,Salle Agnès Varda,Cannes Premiere,VESNA,Rostislav Kirpičenko,1h33
+2026-05-18,19:15,Salle Agnès Varda,Cannes Premiere,L'AFFAIRE MARIE-CLAIRE (WOMEN ON TRIAL),Lauriane Escaffre & Yvo Muller,1h42
+2026-05-18,20:15,Salle Debussy,Cannes Premiere,AQUÍ,Tiago Guedes,3h23
+2026-05-18,22:30,Grand Théâtre Lumière,Special Screenings,HER PRIVATE HELL,Nicolas Winding Refn,1h49
+2026-05-19,16:30,Salle Agnès Varda,Cannes Premiere,LUCY LOST,Olivier Clert,1h25
+2026-05-19,19:15,Salle Agnès Varda,Cannes Premiere,LE TRIANGLE D'OR,Hélène Rosselet-Ruiz,1h30
+2026-05-19,20:00,Salle Debussy,Cannes Premiere,KOKUROJO (LE CHÂTEAU D'ARIOKA / THE SAMURAI AND THE PRISONER),Kurosawa Kiyoshi,2h27
+2026-05-19,22:00,Grand Théâtre Lumière,Special Screenings,DIAMOND,Andy Garcia,1h58
+2026-05-20,18:45,Grand Théâtre Lumière,Special Screenings,LA BATAILLE DE GAULLE : L'ÂGE DE FER,Antonin Baudry,2h40
+2026-05-20,19:45,Salle Agnès Varda,Cannes Premiere,LES SURVIVANTS DU CHE (CHE GUEVARA: THE LAST COMPANIONS),Christophe Dimitri Réveille,1h38
+2026-05-20,19:30,Salle Debussy,Cannes Premiere,MARIAGE AU GOÛT D'ORANGE,Christophe Honoré,1h55
+2026-05-20,00:30,Grand Théâtre Lumière,Special Screenings,ROMA ELASTICA,Bertrand Mandico,1h47
+2026-05-21,14:30,Salle Buñuel,Special Screenings,RENDEZ-VOUS AVEC / WITH TILDA SWINTON,,1h30
+2026-05-21,19:30,Salle Debussy,Cannes Premiere,THE END OF IT,Maria Martínez Bayona,1h42
+2026-05-22,22:00,Grand Théâtre Lumière,Cannes Premiere,L’OBJET DU DÉLIT (CRESCENDO),Agnès Jaoui,2h13
+2026-05-13,19:15,Salle Debussy,Un Certain Regard,TEENAGE SEX AND DEATH AT CAMP MIASMA,Jane Schoenbrun,1h46
+2026-05-14,11:30,Salle Debussy,Un Certain Regard,QUELQUES MOTS D'AMOUR,Rudi Rosenberg,1h35
+2026-05-14,14:00,Salle Debussy,Un Certain Regard,EL DESHIELO (DÉGEL / THE MELTDOWN),Manuela Martelli,1h48
+2026-05-15,11:00,Salle Debussy,Un Certain Regard,CONGO BOY,Rafiki Fariala,1h35
+2026-05-15,14:15,Salle Debussy,Un Certain Regard,CLUB KID,Jordan Firstman,2h06
+2026-05-16,11:15,Salle Debussy,Un Certain Regard,MÉMOIRE DE FILLE (A GIRL'S STORY),Judith Godrèche,1h57
+2026-05-16,14:00,Salle Debussy,Un Certain Regard,SIEMPRE SOY TU ANIMAL MATERNO (TON ANIMAL MATERNEL / FOREVER YOUR MATERNAL ANIMAL),Valentina Maurel,1h40
+2026-05-17,11:00,Salle Debussy,Un Certain Regard,ALL THE LOVERS IN THE NIGHT (DE TOUTES LES NUITS LES AMANTS),Sode Yukiko,2h19
+2026-05-17,14:00,Salle Debussy,Un Certain Regard,I'LL BE GONE IN JUNE,Katharina Rivilis,2h05
+2026-05-18,11:30,Salle Debussy,Un Certain Regard,EVERYTIME,Sandra Wollner,2h01
+2026-05-18,14:30,Salle Debussy,Un Certain Regard,LA MÁS DULCE (STRAWBERRIES),Laïla Marrakchi,1h41
+2026-05-19,11:00,Salle Debussy,Un Certain Regard,BEN'IMANA,Marie-Clémentine Dusabejambo,1h36
+2026-05-19,14:00,Salle Debussy,Un Certain Regard,LE CORSET (IRON BOY),Louis Clichy,1h29
+2026-05-20,11:00,Salle Debussy,Un Certain Regard,ELEPHANTS IN THE FOG (LES ÉLÉPHANTS DANS LA BRUME),Abinash Bikram Shah,1h43
+2026-05-20,14:00,Salle Debussy,Un Certain Regard,YESTERDAY THE EYE DIDN'T SLEEP,Rakan Mayasi,1h40
+2026-05-20,16:30,Salle Debussy,Un Certain Regard,TITANIC OCEAN,Konstantina Kotzamani,2h10
+2026-05-21,11:00,Salle Debussy,Un Certain Regard,UĻA (ULYA),Viesturs Kairišs,1h42
+2026-05-21,14:00,Salle Debussy,Un Certain Regard,VICTORIAN PSYCHO,Zachary Wigon,1h30
+2026-05-22,20:15,Salle Debussy,Un Certain Regard,ULYSSE,Laetitia Masson,1h37
+2026-05-19,14:30,Salle Buñuel,La Cinef,SÉLECTION LA CINEF PROGRAMME 1,,1h26
+2026-05-20,11:15,Salle Buñuel,La Cinef,SÉLECTION LA CINEF PROGRAMME 2,,1h21
+2026-05-20,14:30,Salle Buñuel,La Cinef,SÉLECTION LA CINEF PROGRAMME 3,,1h17
+2026-05-21,11:00,Salle Buñuel,La Cinef,SÉLECTION LA CINEF PROGRAMME 4,,1h15
+2026-05-21,18:00,Salle Buñuel,La Cinef,PALMARÈS LA CINEF,,
+2026-05-22,11:00,Salle Debussy,In Competition - Short Films,COURTS MÉTRAGES EN COMPÉTITION,,2h28
+2026-05-22,14:00,Salle Buñuel,In Competition - Short Films,COURTS MÉTRAGES EN COMPÉTITION,,2h28
+2026-05-12,14:30,Salle Debussy,Cannes Classics,PAN'S LABYRINTH (LE LABYRINTHE DE PAN),Guillermo del Toro,1h58
+2026-05-13,11:30,Salle Buñuel,Cannes Classics,TILAÏ,Idrissa Ouedraogo,1h21
+2026-05-13,15:30,Salle Agnès Varda,Cannes Classics,MOONLIGHTING (TRAVAIL AU NOIR),Jerzy Skolimowski,1h37
+2026-05-13,19:00,Salle Buñuel,Cannes Classics,BAWANG BIEJI (FAREWELL MY CONCUBINE / ADIEU MA CONCUBINE),Chen Kaige,2h50
+2026-05-13,23:45,Grand Théâtre Lumière,Cannes Classics,THE FAST AND THE FURIOUS (FAST AND FURIOUS),Rob Cohen,1h47
+2026-05-14,15:00,Salle Buñuel,Cannes Classics,CZŁOWIEK Z ŻELAZA (MAN OF IRON / L'HOMME DE FER),Andrzej Wajda,2h33
+2026-05-14,16:00,Salle Agnès Varda,Cannes Classics,L'ÂGE D'OR (THE GOLDEN AGE),Bérenger Thouin,1h53
+2026-05-14,18:45,Salle Buñuel,Cannes Classics,UNE VIE MANIFESTE (A LIFE A MANIFESTO),Jean-Gabriel Périot,1h26
+2026-05-14,21:15,Salle Buñuel,Cannes Classics,KEN RUSSELL'S THE DEVILS,Ken Russell,1h54
+2026-05-15,13:15,Salle Buñuel,Cannes Classics,FESTIVAL DE CANNES 1947,Adrien Fred Maury,1h00
+2026-05-15,14:45,Salle Buñuel,Cannes Classics,PELECHIAN PROJECT,Artavazd Pelechian,1h30
+2026-05-15,16:45,Salle Buñuel,Cannes Classics,SANSHIRO SUGATA (LA LÉGENDE DU GRAND JUDO),Akira Kurosawa,1h31
+2026-05-15,19:00,Salle Buñuel,Cannes Classics,THE STORY OF DOCUMENTARY FILM (THE 1970S),Mark Cousins,1h59
+2026-05-16,14:00,Salle Buñuel,Cannes Classics,LA CASA DEL ÁNGEL (LA MAISON DE L'ANGE / THE HOUSE OF THE ANGEL),Leopoldo Torre Nilsson,1h16
+2026-05-16,15:45,Salle Buñuel,Cannes Classics,AMMA ARIYAN (REPORT TO MOTHER),John Abraham,1h55
+2026-05-16,18:30,Salle Buñuel,Cannes Classics,VITTORIO DE SICA – LA VITA IN SCENA (VITTORIO DE SICA – STAGING LIFE),Francesco Zippel,1h40
+2026-05-16,20:45,Salle Buñuel,Cannes Classics,LA CIOCIARA (TWO WOMEN),Vittorio De Sica,1h41
+2026-05-17,15:15,Salle Agnès Varda,Cannes Classics,SIERRA DE TERUEL (ESPOIR),André Malraux,1h30
+2026-05-17,16:30,Salle Buñuel,Cannes Classics,THE DULL-ICE FLOWER,Yang Li-Kuo,1h40
+2026-05-17,19:00,Salle Buñuel,Cannes Classics,MAVERICK – THE EPIC ADVENTURES OF DAVID LEAN,Barnaby Thompson,1h45
+2026-05-18,14:00,Salle Buñuel,Cannes Classics,SACEM – LA LEÇON DE MUSIQUE AMINE BOUHAFA,,1h30
+2026-05-18,16:00,Salle Buñuel,Cannes Classics,EVA (EVE),Maria Plyta,1h30
+2026-05-18,18:00,Salle Buñuel,Cannes Classics,NOSTALGIA FOR THE FUTURE (NOSTALGIE DU FUTUR),Brecht Debackere,1h15
+2026-05-18,19:45,Salle Buñuel,Cannes Classics,METTI UNA SERA A CENA (DISONS UN SOIR À DINER / LOVE CIRCLE),Giuseppe Patroni Griffi,2h05
+2026-05-19,16:45,Salle Buñuel,Cannes Classics,THE STRANGER (LE CRIMINEL),Orson Welles,1h35
+2026-05-19,19:30,Salle Buñuel,Cannes Classics,DU LING ZH YING (TORINO SHADOW),Jia Zhang-ke,1h02
+2026-05-19,19:30,Salle Buñuel,Cannes Classics,GOODNIGHT LAMBY,Dustin Yellin,
+2026-05-19,19:30,Salle Buñuel,Cannes Classics,ZAMINE BAZI (PLAYGROUND),Amirhossein Shojaei,
+2026-05-19,21:00,Salle Buñuel,Cannes Classics,L'INNOCENTE (L'INNOCENT / THE INNOCENT),Luchino Visconti,2h10
+2026-05-20,16:30,Salle Buñuel,Cannes Classics,LA SYMPHONIE PASTORALE (PASTORAL SYMPHONY),Jean Delannoy,1h37
+2026-05-20,19:00,Salle Buñuel,Cannes Classics,DERNSIE: THE AMAZING LIFE OF BRUCE DERN,Mike Mendez,1h51
+2026-05-20,16:30,Salle Agnès Varda,Cannes Classics,MON COLUCHE À MOI (MY COLUCHE),Michel Denisot & Julie Lazare & Camille Bruère,1h36
+2026-05-20,20:00,Salle Buñuel,Cannes Classics,MACHINE GUN KELLY,Roger Corman,1h24
+2026-05-21,10:30,Salle Buñuel,Cannes Classics,LA DÉRIVE (THE DRIFT),Paula Delsol,1h23
+2026-05-21,19:15,Salle Agnès Varda,Cannes Classics,MEEUWEN STERVEN IN DE HAVEN (LES MOUETTES MEURENT AU PORT / SEAGULLS DIE IN THE HARBOUR),Rik Kuypers & Roland Verhavert & Ivo Michiels,1h27
+2026-05-21,20:00,Salle Buñuel,Cannes Classics,HOMMAGE PIERRE ANGÉNIEUX À AKIKO ASHIZAWA (JSC),,1h15
+2026-05-13,11:00,Salle Agnès Varda,Out of Competition,LA VÉNUS ÉLECTRIQUE,Pierre Salvadori,2h02
+2026-05-14,08:30,Salle Debussy,Un Certain Regard,TEENAGE SEX AND DEATH AT CAMP MIASMA,Jane Schoenbrun,1h46
+2026-05-14,09:00,Salle Agnès Varda,In Competition - Feature Films,NAGI NOTES (QUELQUES JOURS À NAGI),Fukada Koji,1h50
+2026-05-14,11:30,Salle Agnès Varda,In Competition - Feature Films,LA VIE D'UNE FEMME (A WOMAN'S LIFE),Charline Bourgeois-Tacquet,1h38
+2026-05-14,14:00,Salle Agnès Varda,Cannes Premiere,THE MATCH,Juan Cabral & Santiago Franco,1h31
+2026-05-15,08:30,Salle Debussy,Un Certain Regard,EL DESHIELO (DÉGEL / THE MELTDOWN),Manuela Martelli,1h48
+2026-05-15,08:30,Salle Agnès Varda,In Competition - Feature Films,HISTOIRES PARALLÈLES (PARALLEL TALES),Asghar Farhadi,2h20
+2026-05-15,11:15,Salle Agnès Varda,In Competition - Feature Films,FATHERLAND,Paweł Pawlikowski,1h22
+2026-05-15,17:15,Salle Agnès Varda,Cannes Premiere,MARIE MADELEINE,Géssica Généus,1h43
+2026-05-15,18:15,Salle Bazin,Un Certain Regard,QUELQUES MOTS D'AMOUR,Rudi Rosenberg,1h35
+2026-05-16,08:30,Salle Debussy,Un Certain Regard,CLUB KID,Jordan Firstman,2h06
+2026-05-16,13:00,Salle Agnès Varda,Cannes Premiere,SI TU PENSES BIEN (THINK GOOD),Géraldine Nakache,1h34
+2026-05-16,16:00,Salle Bazin,Cannes Premiere,PROPELLER ONE-WAY NIGHT COACH (VOL DE NUIT POUR LOS ANGELES),John Travolta,1h01
+2026-05-16,17:15,Salle Agnès Varda,Un Certain Regard,CONGO BOY,Rafiki Fariala,1h35
+2026-05-16,21:30,Salle Agnès Varda,In Competition - Feature Films,GENTLE MONSTER,Marie Kreutzer,1h54
+2026-05-17,08:30,Salle Debussy,Un Certain Regard,SIEMPRE SOY TU ANIMAL MATERNO (TON ANIMAL MATERNEL / FOREVER YOUR MATERNAL ANIMAL),Valentina Maurel,1h40
+2026-05-17,10:30,Salle Agnès Varda,Un Certain Regard,MÉMOIRE DE FILLE (A GIRL'S STORY),Judith Godrèche,1h57
+2026-05-17,12:45,Salle Agnès Varda,In Competition - Feature Films,SHEEP IN THE BOX,Koreeda Hirokazu,2h06
+2026-05-17,21:00,Salle Agnès Varda,Cannes Premiere,HEIMSUCHUNG (LE BOIS DE KLARA / VISITATION),Volker Schlöndorff,1h58
+2026-05-18,08:30,Salle Debussy,Un Certain Regard,I'LL BE GONE IN JUNE,Katharina Rivilis,2h05
+2026-05-18,08:30,Salle Agnès Varda,In Competition - Feature Films,GARANCE,Jeanne Herry,2h00
+2026-05-18,11:00,Salle Agnès Varda,In Competition - Feature Films,MOULIN,László Nemes,2h10
+2026-05-18,13:45,Salle Agnès Varda,Cannes Premiere,LA TROISIÈME NUIT (WHEN THE NIGHT FALLS),Daniel Auteuil,1h40
+2026-05-18,14:00,Salle Bazin,Un Certain Regard,ALL THE LOVERS IN THE NIGHT (DE TOUTES LES NUITS LES AMANTS),Sode Yukiko,2h19
+2026-05-18,21:15,Salle Agnès Varda,In Competition - Feature Films,HOPE,Na Hong-jin,2h40
+2026-05-19,08:30,Salle Debussy,Un Certain Regard,LA MÁS DULCE (STRAWBERRIES),Laïla Marrakchi,1h41
+2026-05-19,11:00,Salle Agnès Varda,In Competition - Feature Films,FJORD,Cristian Mungiu,2h26
+2026-05-19,20:30,Salle Bazin,Un Certain Regard,EVERYTIME,Sandra Wollner,2h01
+2026-05-19,21:15,Salle Agnès Varda,In Competition - Feature Films,L'INCONNUE (THE UNKNOWN),Arthur Harari,2h19
+2026-05-20,08:30,Salle Debussy,Un Certain Regard,LE CORSET (IRON BOY),Louis Clichy,1h29
+2026-05-20,18:45,Salle Bazin,Un Certain Regard,BEN'IMANA,Marie-Clémentine Dusabejambo,1h36
+2026-05-20,21:00,Salle Agnès Varda,Cannes Premiere,KOKUROJO (LE CHÂTEAU D'ARIOKA / THE SAMURAI AND THE PRISONER),Kurosawa Kiyoshi,2h27
+2026-05-21,08:30,Salle Debussy,Un Certain Regard,YESTERDAY THE EYE DIDN'T SLEEP,Rakan Mayasi,1h40
+2026-05-21,14:00,Salle Agnès Varda,Cannes Premiere,MARIAGE AU GOÛT D'ORANGE,Christophe Honoré,1h55
+2026-05-21,14:30,Salle Bazin,Un Certain Regard,TITANIC OCEAN,Konstantina Kotzamani,2h10
+2026-05-21,20:15,Salle Bazin,Un Certain Regard,ELEPHANTS IN THE FOG (LES ÉLÉPHANTS DANS LA BRUME),Abinash Bikram Shah,1h43
+2026-05-21,22:00,Salle Agnès Varda,In Competition - Feature Films,NOTRE SALUT,Emmanuel Marre,2h35
+2026-05-22,08:30,Salle Debussy,Un Certain Regard,VICTORIAN PSYCHO,Zachary Wigon,1h30
+2026-05-22,08:30,Salle Agnès Varda,In Competition - Feature Films,COWARD,Lukas Dhont,2h00
+2026-05-22,11:15,Salle Agnès Varda,In Competition - Feature Films,LA BOLA NEGRA,Javier Calvo & Javier Ambrossi,2h35
+2026-05-22,14:30,Salle Agnès Varda,Cannes Premiere,THE END OF IT,Maria Martínez Bayona,1h42
+2026-05-22,16:45,Salle Agnès Varda,Un Certain Regard,UĻA (ULYA),Viesturs Kairišs,1h42
+2026-05-13,10:00,Théâtre Croisette,Quinzaine des Cinéastes,BUTTERFLY JAM,Kantemir Balagov,1h42
+2026-05-13,21:45,Théâtre Croisette,Quinzaine des Cinéastes,BUTTERFLY JAM,Kantemir Balagov,1h42
+2026-05-13,14:00,Théâtre Croisette,Special Screenings,CARROSSE D'OR : J'AI PAS SOMMEIL (I CAN'T SLEEP),Claire Denis,1h47
+2026-05-13,18:30,Théâtre Croisette,Quinzaine des Cinéastes,BUTTERFLY JAM,Kantemir Balagov,1h42
+2026-05-14,08:45,Théâtre Croisette,Quinzaine des Cinéastes,WE ARE ALIENS,Kohei Kadowaki,1h57
+2026-05-14,17:45,Théâtre Croisette,Quinzaine des Cinéastes,WE ARE ALIENS,Kohei Kadowaki,1h57
+2026-05-14,12:00,Théâtre Croisette,Quinzaine des Cinéastes,GABIN,Maxence Voiseux,1h45
+2026-05-14,20:45,Théâtre Croisette,Quinzaine des Cinéastes,GABIN,Maxence Voiseux,1h45
+2026-05-14,15:00,Théâtre Croisette,Quinzaine des Cinéastes,MERCI D'ÊTRE VENU (THANKS FOR COMING),Alain Cavalier,1h22
+2026-05-14,11:30,Les Arcades,Quinzaine des Cinéastes,GABIN,Maxence Voiseux,1h45
+2026-05-14,22:30,Les Arcades,Quinzaine des Cinéastes,WE ARE ALIENS,Kohei Kadowaki,1h57
+2026-05-15,08:45,Théâtre Croisette,Quinzaine des Cinéastes,ATONEMENT (L'APAISEMENT),Reed Van Dyk,1h58
+2026-05-15,17:30,Théâtre Croisette,Quinzaine des Cinéastes,ATONEMENT (L'APAISEMENT),Reed Van Dyk,1h58
+2026-05-15,12:00,Théâtre Croisette,Quinzaine des Cinéastes,LE JOURNAL D'UNE FEMME DE CHAMBRE (THE DIARY OF A CHAMBERMAID),Radu Jude,1h34
+2026-05-15,20:30,Théâtre Croisette,Quinzaine des Cinéastes,LE JOURNAL D'UNE FEMME DE CHAMBRE (THE DIARY OF A CHAMBERMAID),Radu Jude,1h34
+2026-05-15,15:00,Théâtre Croisette,Quinzaine des Cinéastes,MERCI D'ÊTRE VENU (THANKS FOR COMING),Alain Cavalier,1h22
+2026-05-15,11:30,Les Arcades,Quinzaine des Cinéastes,LE JOURNAL D'UNE FEMME DE CHAMBRE (THE DIARY OF A CHAMBERMAID),Radu Jude,1h34
+2026-05-15,22:30,Les Arcades,Quinzaine des Cinéastes,ATONEMENT (L'APAISEMENT),Reed Van Dyk,1h58
+2026-05-16,08:45,Théâtre Croisette,Quinzaine des Cinéastes,SHANA,Lila Pinell,1h23
+2026-05-16,21:15,Théâtre Croisette,Quinzaine des Cinéastes,SHANA,Lila Pinell,1h23
+2026-05-16,11:30,Théâtre Croisette,Quinzaine des Cinéastes,CLARISSA,Arie & Chuko Esiri,2h05
+2026-05-16,18:00,Théâtre Croisette,Quinzaine des Cinéastes,CLARISSA,Arie & Chuko Esiri,2h05
+2026-05-16,11:30,Les Arcades,Quinzaine des Cinéastes,LE JOURNAL D'UNE FEMME DE CHAMBRE (THE DIARY OF A CHAMBERMAID),Radu Jude,1h34
+2026-05-16,15:00,Théâtre Croisette,Quinzaine des Cinéastes,DOUBLE FREEDOM (LA LIBERTAD DOBLE),Lisandro Alonso,1h40
+2026-05-16,22:30,Les Arcades,Quinzaine des Cinéastes,ATONEMENT (L'APAISEMENT),Reed Van Dyk,1h58
+2026-05-17,08:45,Théâtre Croisette,Quinzaine des Cinéastes,DORA,July Jung,2h17
+2026-05-17,18:00,Théâtre Croisette,Quinzaine des Cinéastes,DORA,July Jung,2h17
+2026-05-17,11:30,Les Arcades,Quinzaine des Cinéastes,SHANA,Lila Pinell,1h23
+2026-05-17,12:15,Théâtre Croisette,Quinzaine des Cinéastes,L'ESPÈCE EXPLOSIVE (TOO MANY BEASTS),Sarah Arnold,1h35
+2026-05-17,21:15,Théâtre Croisette,Quinzaine des Cinéastes,L'ESPÈCE EXPLOSIVE (TOO MANY BEASTS),Sarah Arnold,1h35
+2026-05-17,15:15,Théâtre Croisette,Quinzaine des Cinéastes,DOUBLE FREEDOM (LA LIBERTAD DOBLE),Lisandro Alonso,1h40
+2026-05-17,22:30,Les Arcades,Quinzaine des Cinéastes,DOUBLE FREEDOM (LA LIBERTAD DOBLE),Lisandro Alonso,1h40
+2026-05-18,08:45,Théâtre Croisette,Quinzaine des Cinéastes,ONCE UPON A TIME IN HARLEM,William & David Greaves,1h40
+2026-05-18,17:45,Théâtre Croisette,Quinzaine des Cinéastes,ONCE UPON A TIME IN HARLEM,William & David Greaves,1h40
+2026-05-18,11:30,Les Arcades,Quinzaine des Cinéastes,L'ESPÈCE EXPLOSIVE (TOO MANY BEASTS),Sarah Arnold,1h35
+2026-05-18,11:45,Théâtre Croisette,Quinzaine des Cinéastes,LA PERRA,Dominga Sotomayor,1h52
+2026-05-18,20:30,Théâtre Croisette,Quinzaine des Cinéastes,LA PERRA,Dominga Sotomayor,1h52
+2026-05-18,15:00,Théâtre Croisette,Quinzaine des Cinéastes,CARMEN L'OISEAU REBELLE (VIVA CARMEN),Sébastien Laudenbach,1h30
+2026-05-18,22:30,Les Arcades,Quinzaine des Cinéastes,CLARISSA,Arie & Chuko Esiri,2h05
+2026-05-19,08:45,Théâtre Croisette,Quinzaine des Cinéastes,LOW EXPECTATIONS (LAVE FORVENTNINGER),Eivind Landsvik,1h45
+2026-05-19,21:15,Théâtre Croisette,Quinzaine des Cinéastes,LOW EXPECTATIONS (LAVE FORVENTNINGER),Eivind Landsvik,1h45
+2026-05-19,11:30,Les Arcades,Quinzaine des Cinéastes,ONCE UPON A TIME IN HARLEM,William & David Greaves,1h40
+2026-05-19,11:45,Théâtre Croisette,Quinzaine des Cinéastes,9 TEMPLES TO HEAVEN,Sompot Chidgasornpongse,2h20
+2026-05-19,17:50,Théâtre Croisette,Quinzaine des Cinéastes,9 TEMPLES TO HEAVEN,Sompot Chidgasornpongse,2h20
+2026-05-19,15:20,Théâtre Croisette,Quinzaine des Cinéastes,CARMEN L'OISEAU REBELLE (VIVA CARMEN),Sébastien Laudenbach,1h30
+2026-05-19,20:30,Olympia,Quinzaine des Cinéastes,CARMEN L'OISEAU REBELLE (VIVA CARMEN),Sébastien Laudenbach,1h30
+2026-05-20,08:45,Théâtre Croisette,Quinzaine des Cinéastes,I SEE BUILDINGS FALL LIKE LIGHTNING (JE VOIS DES IMMEUBLES TOMBER COMME LA FOUDRE),Clio Barnard,1h49
+2026-05-20,18:30,Théâtre Croisette,Quinzaine des Cinéastes,I SEE BUILDINGS FALL LIKE LIGHTNING (JE VOIS DES IMMEUBLES TOMBER COMME LA FOUDRE),Clio Barnard,1h49
+2026-05-20,11:30,Les Arcades,Quinzaine des Cinéastes,LA PERRA,Dominga Sotomayor,1h52
+2026-05-20,12:00,Théâtre Croisette,Quinzaine des Cinéastes,DEATH HAS NO MASTER (LA MUERTE NO TIENE DUEÑO),Jorge Thielen Armand,1h44
+2026-05-20,21:15,Théâtre Croisette,Quinzaine des Cinéastes,DEATH HAS NO MASTER (LA MUERTE NO TIENE DUEÑO),Jorge Thielen Armand,1h44
+2026-05-20,15:00,Théâtre Croisette,Special Screenings,LES ROCHES ROUGES (RED ROCKS),Bruno Dumont,1h31
+2026-05-20,22:30,Les Arcades,Quinzaine des Cinéastes,LOW EXPECTATIONS (LAVE FORVENTNINGER),Eivind Landsvik,1h45
+2026-05-21,08:45,Théâtre Croisette,Quinzaine des Cinéastes,LE VERTIGE (VERTIGINOUS),Quentin Dupieux,1h07
+2026-05-21,21:45,Théâtre Croisette,Quinzaine des Cinéastes,LE VERTIGE (VERTIGINOUS),Quentin Dupieux,1h07
+2026-05-21,11:30,Théâtre Croisette,Quinzaine des Cinéastes,PROGRAMME COURTS 1,,1h44
+2026-05-21,12:00,Olympia,Quinzaine des Cinéastes,I SEE BUILDINGS FALL LIKE LIGHTNING (JE VOIS DES IMMEUBLES TOMBER COMME LA FOUDRE),Clio Barnard,1h49
+2026-05-21,15:00,Théâtre Croisette,Quinzaine des Cinéastes,PROGRAMME COURTS 2,,1h49
+2026-05-21,19:00,Théâtre Croisette,Quinzaine des Cinéastes,CLÔTURE / CLOSING,,
+2026-05-21,19:00,Théâtre Croisette,Quinzaine des Cinéastes,LE VERTIGE (VERTIGINOUS),Quentin Dupieux,1h07
+2026-05-21,20:30,Olympia,Quinzaine des Cinéastes,DEATH HAS NO MASTER (LA MUERTE NO TIENE DUEÑO),Jorge Thielen Armand,1h44
+2026-05-22,08:45,Théâtre Croisette,Quinzaine des Cinéastes,MERCI D'ÊTRE VENU (THANKS FOR COMING),Alain Cavalier,1h22
+2026-05-22,11:00,Théâtre Croisette,Special Screenings,PRIX ALPINE : CONVERSATION AVEC / WITH ALICE WINOCOUR,,
+2026-05-22,12:00,Olympia,Quinzaine des Cinéastes,LES ROCHES ROUGES (RED ROCKS),Bruno Dumont,1h31
+2026-05-22,13:15,Théâtre Croisette,Quinzaine des Cinéastes,WE ARE ALIENS,Kohei Kadowaki,1h57
+2026-05-22,16:00,Théâtre Croisette,Quinzaine des Cinéastes,ATONEMENT (L'APAISEMENT),Reed Van Dyk,1h58
+2026-05-22,18:45,Théâtre Croisette,Quinzaine des Cinéastes,LES ROCHES ROUGES (RED ROCKS),Bruno Dumont,1h31
+2026-05-22,20:30,Olympia,Quinzaine des Cinéastes,9 TEMPLES TO HEAVEN,Sompot Chidgasornpongse,2h20
+2026-05-22,21:00,Théâtre Croisette,Quinzaine des Cinéastes,BUTTERFLY JAM,Kantemir Balagov,1h42
+2026-05-13,08:45,Espace Miramar,Semaine de la Critique,IN WAVES,Phuong Mai Nguyen,1h31
+2026-05-13,14:45,Espace Miramar,Semaine de la Critique,IN WAVES,Phuong Mai Nguyen,1h31
+2026-05-13,11:30,Espace Miramar,Semaine de la Critique,DUA,Blerta Basholli,1h41
+2026-05-13,17:30,Espace Miramar,Semaine de la Critique,DUA,Blerta Basholli,1h41
+2026-05-13,20:30,Espace Miramar,Semaine de la Critique,IN WAVES,Phuong Mai Nguyen,1h31
+2026-05-14,08:45,Espace Miramar,Semaine de la Critique,DUA,Blerta Basholli,1h41
+2026-05-14,11:30,Espace Miramar,Semaine de la Critique,VIVA (ALIVE),Aina Clotet,1h53
+2026-05-14,18:00,Espace Miramar,Semaine de la Critique,VIVA (ALIVE),Aina Clotet,1h53
+2026-05-14,15:30,Espace Miramar,Special Screenings,INVITATION NEXT STEP STUDIO INDONESIA | COURTS MÉTRAGES,,1h01
+2026-05-15,08:30,Espace Miramar,Semaine de la Critique,VIVA (ALIVE),Aina Clotet,1h53
+2026-05-15,11:15,Espace Miramar,Semaine de la Critique,WU MING NÜ HAI (A GIRL UNKNOWN),Zou Jing,2h08
+2026-05-15,17:30,Espace Miramar,Semaine de la Critique,WU MING NÜ HAI (A GIRL UNKNOWN),Zou Jing,2h08
+2026-05-15,14:30,Espace Miramar,Semaine de la Critique,LA FRAPPE (THE BLOW),Julien Gaspar-Oliveri,1h46
+2026-05-15,21:00,Espace Miramar,Semaine de la Critique,LA FRAPPE (THE BLOW),Julien Gaspar-Oliveri,1h46
+2026-05-16,08:00,Espace Miramar,Semaine de la Critique,WU MING NÜ HAI (A GIRL UNKNOWN),Zou Jing,2h08
+2026-05-16,11:00,Espace Miramar,Semaine de la Critique,LA GRADIVA,Marine Atlan,2h25
+2026-05-16,17:15,Espace Miramar,Semaine de la Critique,LA GRADIVA,Marine Atlan,2h25
+2026-05-16,14:30,Espace Miramar,Semaine de la Critique,DU FIOUL DANS LES ARTÈRES (FLESH AND FUEL),Pierre Le Gall,1h31
+2026-05-16,21:00,Espace Miramar,Semaine de la Critique,DU FIOUL DANS LES ARTÈRES (FLESH AND FUEL),Pierre Le Gall,1h31
+2026-05-17,08:15,Espace Miramar,Semaine de la Critique,LA GRADIVA,Marine Atlan,2h25
+2026-05-17,11:30,Espace Miramar,Semaine de la Critique,AL MAHATTAH (THE STATION),Sara Ishaq,1h52
+2026-05-17,19:00,Espace Miramar,Semaine de la Critique,AL MAHATTAH (THE STATION),Sara Ishaq,1h52
+2026-05-17,16:00,Espace Miramar,Special Screenings,COURTS MÉTRAGES | SÉANCE SPÉCIALE,,1h23
+2026-05-18,08:30,Espace Miramar,Semaine de la Critique,AL MAHATTAH (THE STATION),Sara Ishaq,1h52
+2026-05-18,11:30,Espace Miramar,Semaine de la Critique,TIN CASTLE (IRISH TRAVELLERS),Alexander Murphy,1h46
+2026-05-18,17:30,Espace Miramar,Semaine de la Critique,TIN CASTLE (IRISH TRAVELLERS),Alexander Murphy,1h46
+2026-05-18,14:30,Espace Miramar,In Competition - Short Films,COURTS MÉTRAGES | COMPÉTITION 1,,1h31
+2026-05-18,20:45,Espace Miramar,In Competition - Short Films,COURTS MÉTRAGES | COMPÉTITION 1,,1h31
+2026-05-19,08:45,Espace Miramar,Semaine de la Critique,TIN CASTLE (IRISH TRAVELLERS),Alexander Murphy,1h46
+2026-05-19,11:30,Espace Miramar,Semaine de la Critique,SEIS MESES EN EL EDIFICIO ROSA CON AZUL (SIX MONTHS IN A PINK AND BLUE BUILDING),Bruno Santamaría Razo,1h45
+2026-05-19,17:30,Espace Miramar,Semaine de la Critique,SEIS MESES EN EL EDIFICIO ROSA CON AZUL (SIX MONTHS IN A PINK AND BLUE BUILDING),Bruno Santamaría Razo,1h45
+2026-05-19,14:30,Espace Miramar,In Competition - Short Films,COURTS MÉTRAGES | COMPÉTITION 2,,1h43
+2026-05-19,20:45,Espace Miramar,In Competition - Short Films,COURTS MÉTRAGES | COMPÉTITION 2,,1h43
+2026-05-20,08:45,Espace Miramar,Semaine de la Critique,SEIS MESES EN EL EDIFICIO ROSA CON AZUL (SIX MONTHS IN A PINK AND BLUE BUILDING),Bruno Santamaría Razo,1h45
+2026-05-20,11:30,Espace Miramar,Semaine de la Critique,ADIEU MONDE CRUEL (GOODBYE CRUEL WORLD),Félix de Givry,1h33
+2026-05-20,20:45,Espace Miramar,Semaine de la Critique,ADIEU MONDE CRUEL (GOODBYE CRUEL WORLD),Félix de Givry,1h33
+2026-05-20,18:00,Espace Miramar,Special Screenings,CÉRÉMONIE DE REMISE DES PRIX / AWARDS CEREMONY,,
+2026-05-21,09:00,Espace Miramar,Special Screenings,INVITATION NEXT STEP STUDIO INDONESIA | COURTS MÉTRAGES,,1h01
+2026-05-21,11:00,Espace Miramar,Special Screenings,PRIX DÉCOUVERTE SONY DU COURT MÉTRAGE & GRAND PRIX AMI PARIS,,
+2026-05-21,15:00,Espace Miramar,Special Screenings,INVITATION AU FESTIVAL INTERNATIONAL DE MORELIA,,1h12
+2026-05-21,17:15,Espace Miramar,Special Screenings,TALENTS ADAMI | COURTS MÉTRAGES,,1h00
+2026-05-21,20:00,Espace Miramar,Special Screenings,PRIX FONDATION GAN À LA DIFFUSION,,
+2026-05-13,20:00,Les Arcades,ACID,MAUVAISE ÉTOILE (UNDER A BAD STAR),Lola Cambourieu & Yann Berlier,2h05
+2026-05-13,20:30,Les Arcades,ACID,MAUVAISE ÉTOILE (UNDER A BAD STAR),Lola Cambourieu & Yann Berlier,2h05
+2026-05-14,11:00,Le Raimu,ACID,CŒUR SECRET (A SECRET HEART),Tom Fontenille,1h28
+2026-05-14,11:00,Studio 13,ACID,DANS LA GUEULE DE L'OGRE (INTO THE JAWS OF THE OGRE),Mahsa Karampour,1h26
+2026-05-14,14:00,Alexandre III,ACID,LA DÉTENTION (DETENTION),Guillaume Massart,2h12
+2026-05-14,16:45,Alexandre III,ACID,BLAISE,Dimitri Planchon & Jean-Paul Guigue,1h22
+2026-05-14,20:00,Les Arcades,ACID,DANS LA GUEULE DE L'OGRE (INTO THE JAWS OF THE OGRE),Mahsa Karampour,1h26
+2026-05-14,20:30,Les Arcades,ACID,DANS LA GUEULE DE L'OGRE (INTO THE JAWS OF THE OGRE),Mahsa Karampour,1h26
+2026-05-15,11:00,Studio 13,ACID,BLAISE,Dimitri Planchon & Jean-Paul Guigue,1h22
+2026-05-15,16:30,Alexandre III,ACID,CŒUR SECRET (A SECRET HEART),Tom Fontenille,1h28
+2026-05-15,19:00,Le Raimu,ACID,MAUVAISE ÉTOILE (UNDER A BAD STAR),Lola Cambourieu & Yann Berlier,2h05
+2026-05-15,20:00,Les Arcades,ACID,BLAISE,Dimitri Planchon & Jean-Paul Guigue,1h22
+2026-05-15,20:30,Les Arcades,ACID,BLAISE,Dimitri Planchon & Jean-Paul Guigue,1h22
+2026-05-16,11:00,Studio 13,ACID,VIRAGES (SUMMER DRIFT),Céline Carridroit & Aline Suter,1h29
+2026-05-16,16:30,Alexandre III,ACID,PROMISED SPACES,Ivan Marković,1h16
+2026-05-16,20:00,Les Arcades,ACID,VIRAGES (SUMMER DRIFT),Céline Carridroit & Aline Suter,1h29
+2026-05-16,20:30,Les Arcades,ACID,VIRAGES (SUMMER DRIFT),Céline Carridroit & Aline Suter,1h29
+2026-05-17,11:00,Studio 13,ACID,BARÇA ZOU (REWIND BARCELONA),Paul Nouhet,1h26
+2026-05-17,16:30,Alexandre III,ACID,MAUVAISE ÉTOILE (UNDER A BAD STAR),Lola Cambourieu & Yann Berlier,2h05
+2026-05-17,19:00,Le Raimu,ACID,DANS LA GUEULE DE L'OGRE (INTO THE JAWS OF THE OGRE),Mahsa Karampour,1h26
+2026-05-17,20:00,Les Arcades,ACID,BARÇA ZOU (REWIND BARCELONA),Paul Nouhet,1h26
+2026-05-17,20:30,Les Arcades,ACID,BARÇA ZOU (REWIND BARCELONA),Paul Nouhet,1h26
+2026-05-18,11:00,Studio 13,ACID,PROMISED SPACES,Ivan Marković,1h16
+2026-05-18,16:30,Alexandre III,ACID,LIVING TWICE DYING THRICE,Karim Lakzadeh,1h43
+2026-05-18,20:00,Les Arcades,ACID,PROMISED SPACES,Ivan Marković,1h16
+2026-05-18,20:30,Les Arcades,ACID,PROMISED SPACES,Ivan Marković,1h16
+2026-05-19,10:30,Studio 13,ACID,LA DÉTENTION (DETENTION),Guillaume Massart,2h12
+2026-05-19,16:30,Alexandre III,ACID,BARÇA ZOU (REWIND BARCELONA),Paul Nouhet,1h26
+2026-05-19,19:00,Le Raimu,ACID,VIRAGES,Céline Carridroit & Aline Suter,1h29
+2026-05-19,20:00,Les Arcades,ACID,LA DÉTENTION (DETENTION),Guillaume Massart,2h12
+2026-05-19,20:30,Les Arcades,ACID,LA DÉTENTION (DETENTION),Guillaume Massart,2h12
+2026-05-20,11:00,Studio 13,ACID,CŒUR SECRET (A SECRET HEART),Tom Fontenille,1h28
+2026-05-20,16:30,Alexandre III,ACID,BLAISE,Dimitri Planchon & Jean-Paul Guigue,1h22
+2026-05-20,20:00,Les Arcades,ACID,CŒUR SECRET (A SECRET HEART),Tom Fontenille,1h28
+2026-05-21,11:00,Studio 13,ACID,LIVING TWICE DYING THRICE,Karim Lakzadeh,1h43
+2026-05-21,16:30,Alexandre III,ACID,DANS LA GUEULE DE L'OGRE (INTO THE JAWS OF THE OGRE),Mahsa Karampour,1h26
+2026-05-21,19:00,Le Raimu,ACID,LIVING TWICE DYING THRICE,Karim Lakzadeh,1h43
+2026-05-21,20:00,Olympia,ACID,LIVING TWICE DYING THRICE,Karim Lakzadeh,1h43
+2026-05-22,11:00,Studio 13,ACID,MAUVAISE ÉTOILE (UNDER A BAD STAR),Lola Cambourieu & Yann Berlier,2h05
+2026-05-22,16:30,Alexandre III,ACID,VIRAGES (SUMMER DRIFT),Céline Carridroit & Aline Suter,1h29
+2026-05-14,09:00,Le Cineum IMAX,Out of Competition,LA VÉNUS ÉLECTRIQUE,Pierre Salvadori,2h02
+2026-05-14,11:45,Le Cineum IMAX,In Competition - Feature Films,NAGI NOTES,Fukada Koji,1h50
+2026-05-14,14:15,Le Cineum IMAX,In Competition - Feature Films,LA VIE D'UNE FEMME,Charline Bourgeois-Tacquet,1h38
+2026-05-14,16:30,Le Cineum IMAX,Out of Competition,L'ABANDON,Vincent Garenq,1h40
+2026-05-15,08:45,Le Cineum IMAX,In Competition - Feature Films,FATHERLAND,Paweł Pawlikowski,1h22
+2026-05-15,08:45,Le Cineum Aurore,In Competition - Feature Films,LA VIE D'UNE FEMME,Charline Bourgeois-Tacquet,1h38
+2026-05-15,09:15,Le Cineum Screen X,Cannes Premiere,THE MATCH,Juan Cabral & Santiago Franco,1h31
+2026-05-15,10:45,Le Cineum IMAX,In Competition - Feature Films,HISTOIRES PARALLÈLES,Asghar Farhadi,2h20
+2026-05-15,11:00,Le Cineum Aurore,In Competition - Feature Films,NAGI NOTES,Fukada Koji,1h50
+2026-05-15,11:15,Le Cineum Screen X,Cannes Premiere,CENIZA EN LA BOCA,Diego Luna,1h42
+2026-05-15,13:15,Le Cineum Aurore,Un Certain Regard,TEENAGE SEX AND DEATH AT CAMP MIASMA,Jane Schoenbrun,1h46
+2026-05-15,13:30,Le Cineum Screen X,Cannes Premiere,TANGLES,Leah Nelson,1h42
+2026-05-15,13:45,Le Cineum IMAX,Special Screenings,SANGUINE,Marion Le Corroller,1h43
+2026-05-15,15:45,Le Cineum Aurore,Un Certain Regard,QUELQUES MOTS D'AMOUR,Rudi Rosenberg,1h35
+2026-05-15,15:45,Le Cineum Screen X,Un Certain Regard,EL DESHIELO,Manuela Martelli,1h48
+2026-05-15,16:00,Le Cineum IMAX,Cannes Premiere,MARIE MADELEINE,Géssica Généus,1h43
+2026-05-16,08:45,Le Cineum IMAX,In Competition - Feature Films,GENTLE MONSTER,Marie Kreutzer,1h54
+2026-05-16,08:45,Le Cineum Aurore,In Competition - Feature Films,FATHERLAND,Paweł Pawlikowski,1h22
+2026-05-16,09:15,Le Cineum Salle 3,Un Certain Regard,CONGO BOY,Rafiki Fariala,1h35
+2026-05-16,09:15,Le Cineum Screen X,Cannes Premiere,CANTONA,David Tryhorn & Ben Nicholas,1h55
+2026-05-16,11:15,Le Cineum Aurore,In Competition - Feature Films,HISTOIRES PARALLÈLES,Asghar Farhadi,2h20
+2026-05-16,11:30,Le Cineum IMAX,Special Screenings,GUN-CHE,Yeon Sang-ho,2h03
+2026-05-16,11:30,Le Cineum Salle 3,Out of Competition,KARMA,Guillaume Canet,2h29
+2026-05-16,11:45,Le Cineum Screen X,Special Screenings,JOHN LENNON: THE LAST INTERVIEW,Steven Soderbergh,1h40
+2026-05-16,14:00,Le Cineum Aurore,Cannes Premiere,SI TU PENSES BIEN,Géraldine Nakache,1h34
+2026-05-16,14:00,Le Cineum Screen X,Un Certain Regard,QUELQUES MOTS D'AMOUR,Rudi Rosenberg,1h35
+2026-05-16,14:30,Le Cineum IMAX,In Competition - Feature Films,SOUDAIN,Hamaguchi Ryusuke,3h16
+2026-05-16,14:30,Le Cineum Salle 3,Un Certain Regard,CLUB KID,Jordan Firstman,2h06
+2026-05-16,16:00,Le Cineum Screen X,Un Certain Regard,EL DESHIELO,Manuela Martelli,1h48
+2026-05-16,16:00,Le Cineum Aurore,Special Screenings,SANGUINE,Marion Le Corroller,1h43
+2026-05-16,17:15,Le Cineum Salle 3,Un Certain Regard,TEENAGE SEX AND DEATH AT CAMP MIASMA,Jane Schoenbrun,1h46
+2026-05-16,18:15,Le Cineum IMAX,Cannes Premiere,PROPELLER ONE-WAY NIGHT COACH,John Travolta,1h01
+2026-05-16,18:15,Le Cineum Screen X,In Competition - Feature Films,LA VIE D'UNE FEMME,Charline Bourgeois-Tacquet,1h38
+2026-05-16,18:15,Le Cineum Aurore,In Competition - Feature Films,NAGI NOTES,Fukada Koji,1h50
+2026-05-17,08:45,Le Cineum IMAX,In Competition - Feature Films,SHEEP IN THE BOX,Koreeda Hirokazu,2h06
+2026-05-17,08:45,Le Cineum Aurore,In Competition - Feature Films,GENTLE MONSTER,Marie Kreutzer,1h54
+2026-05-17,09:15,Le Cineum Screen X,Cannes Premiere,REHEARSALS FOR A REVOLUTION,Pegah Ahangarani,1h35
+2026-05-17,09:15,Le Cineum Salle 3,Un Certain Regard,MÉMOIRE DE FILLE,Judith Godrèche,1h57
+2026-05-17,11:15,Le Cineum Aurore,In Competition - Feature Films,SOUDAIN,Hamaguchi Ryusuke,3h16
+2026-05-17,11:30,Le Cineum Screen X,Cannes Premiere,LES MATINS MERVEILLEUX,Avril Besson,1h27
+2026-05-17,11:30,Le Cineum Salle 3,Un Certain Regard,SIEMPRE SOY TU ANIMAL MATERNO,Valentina Maurel,1h40
+2026-05-17,11:45,Le Cineum IMAX,In Competition - Feature Films,EL SER QUERIDO,Rodrigo Sorogoyen,2h15
+2026-05-17,13:30,Le Cineum Screen X,Un Certain Regard,CONGO BOY,Rafiki Fariala,1h35
+2026-05-17,14:15,Le Cineum Salle 3,Special Screenings,FULL PHIL,Quentin Dupieux,1h18
+2026-05-17,14:30,Le Cineum IMAX,In Competition - Feature Films,PAPER TIGER,James Gray,1h55
+2026-05-17,15:00,Le Cineum Aurore,Cannes Premiere,HEIMSUCHUNG,Volker Schlöndorff,1h58
+2026-05-17,15:30,Le Cineum Screen X,In Competition - Feature Films,FATHERLAND,Paweł Pawlikowski,1h22
+2026-05-17,16:15,Le Cineum Salle 3,Un Certain Regard,CLUB KID,Jordan Firstman,2h06
+2026-05-17,17:00,Le Cineum IMAX,Out of Competition,KARMA,Guillaume Canet,2h29
+2026-05-17,17:15,Le Cineum Screen X,In Competition - Feature Films,HISTOIRES PARALLÈLES,Asghar Farhadi,2h20
+2026-05-17,17:30,Le Cineum Aurore,Special Screenings,GUN-CHE,Yeon Sang-ho,2h03
+2026-05-18,08:45,Le Cineum IMAX,In Competition - Feature Films,MOULIN,László Nemes,2h10
+2026-05-18,08:45,Le Cineum Aurore,In Competition - Feature Films,SHEEP IN THE BOX,Koreeda Hirokazu,2h06
+2026-05-18,09:15,Le Cineum Screen X,Un Certain Regard,MÉMOIRE DE FILLE,Judith Godrèche,1h57
+2026-05-18,09:15,Le Cineum Salle 3,Un Certain Regard,ALL THE LOVERS IN THE NIGHT,Sode Yukiko,2h19
+2026-05-18,11:30,Le Cineum Aurore,In Competition - Feature Films,EL SER QUERIDO,Rodrigo Sorogoyen,2h15
+2026-05-18,11:45,Le Cineum IMAX,In Competition - Feature Films,GARANCE,Jeanne Herry,2h00
+2026-05-18,11:45,Le Cineum Screen X,Un Certain Regard,SIEMPRE SOY TU ANIMAL MATERNO,Valentina Maurel,1h40
+2026-05-18,12:00,Le Cineum Salle 3,Un Certain Regard,I'LL BE GONE IN JUNE,Katharina Rivilis,2h05
+2026-05-18,14:00,Le Cineum Screen X,Cannes Premiere,AVEDON,Ron Howard,1h44
+2026-05-18,14:30,Le Cineum IMAX,In Competition - Feature Films,HOPE,Na Hong-jin,2h40
+2026-05-18,14:30,Le Cineum Aurore,In Competition - Feature Films,PAPER TIGER,James Gray,1h55
+2026-05-18,14:45,Le Cineum Salle 3,Cannes Premiere,LA TROISIÈME NUIT,Daniel Auteuil,1h40
+2026-05-18,17:00,Le Cineum Aurore,Special Screenings,FULL PHIL,Quentin Dupieux,1h18
+2026-05-18,17:15,Le Cineum Salle 3,In Competition - Feature Films,GENTLE MONSTER,Marie Kreutzer,1h54
+2026-05-18,17:45,Le Cineum IMAX,Special Screenings,JIM QUEEN,Marco Nguyen & Nicolas Athané,1h25
+2026-05-19,08:45,Le Cineum IMAX,In Competition - Feature Films,L'INCONNUE,Arthur Harari,2h19
+2026-05-19,08:45,Le Cineum Aurore,In Competition - Feature Films,MOULIN,László Nemes,2h10
+2026-05-19,09:15,Le Cineum Salle 3,Cannes Premiere,AQUÍ,Tiago Guedes,3h23
+2026-05-19,09:15,Le Cineum Screen X,Un Certain Regard,ALL THE LOVERS IN THE NIGHT,Sode Yukiko,2h19
+2026-05-19,11:30,Le Cineum Aurore,In Competition - Feature Films,GARANCE,Jeanne Herry,2h00
+2026-05-19,11:45,Le Cineum IMAX,In Competition - Feature Films,FJORD,Cristian Mungiu,2h26
+2026-05-19,12:00,Le Cineum Screen X,Cannes Premiere,L'AFFAIRE MARIE-CLAIRE,Lauriane Escaffre & Yvo Muller,1h42
+2026-05-19,13:15,Le Cineum Salle 3,Un Certain Regard,EVERYTIME,Sandra Wollner,2h01
+2026-05-19,14:00,Le Cineum Aurore,In Competition - Feature Films,HOPE,Na Hong-jin,2h40
+2026-05-19,14:15,Le Cineum Screen X,Un Certain Regard,I'LL BE GONE IN JUNE,Katharina Rivilis,2h05
+2026-05-19,14:45,Le Cineum IMAX,Special Screenings,HER PRIVATE HELL,Nicolas Winding Refn,1h49
+2026-05-19,15:45,Le Cineum Salle 3,Un Certain Regard,LA MÁS DULCE,Laïla Marrakchi,1h41
+2026-05-19,16:30,Le Cineum Screen X,Special Screenings,JIM QUEEN,Marco Nguyen & Nicolas Athané,1h25
+2026-05-19,17:15,Le Cineum IMAX,In Competition - Feature Films,PAPER TIGER,James Gray,1h55
+2026-05-19,17:15,Le Cineum Aurore,In Competition - Feature Films,SHEEP IN THE BOX,Koreeda Hirokazu,2h06
+2026-05-19,18:00,Le Cineum Salle 3,In Competition - Feature Films,EL SER QUERIDO,Rodrigo Sorogoyen,2h15
+2026-05-20,08:45,Le Cineum IMAX,In Competition - Feature Films,MINOTAUR,Andreï Zviaguintsev,2h15
+2026-05-20,08:45,Le Cineum Aurore,In Competition - Feature Films,L'INCONNUE,Arthur Harari,2h19
+2026-05-20,09:15,Le Cineum Screen X,Un Certain Regard,EVERYTIME,Sandra Wollner,2h01
+2026-05-20,09:15,Le Cineum Salle 3,Un Certain Regard,BEN'IMANA,Marie-Clémentine Dusabejambo,1h36
+2026-05-20,11:30,Le Cineum Salle 3,Un Certain Regard,LE CORSET,Louis Clichy,1h29
+2026-05-20,11:45,Le Cineum IMAX,In Competition - Feature Films,AMARGA NAVIDAD,Pedro Almodóvar,1h52
+2026-05-20,11:45,Le Cineum Aurore,In Competition - Feature Films,FJORD,Cristian Mungiu,2h26
+2026-05-20,11:50,Le Cineum Screen X,Un Certain Regard,LA MÁS DULCE,Laïla Marrakchi,1h41
+2026-05-20,14:00,Le Cineum Salle 3,In Competition - Feature Films,MOULIN,László Nemes,2h10
+2026-05-20,14:15,Le Cineum IMAX,Special Screenings,DIAMOND,Andy Garcia,1h58
+2026-05-20,14:15,Le Cineum Screen X,Cannes Premiere,LUCY LOST,Olivier Clert,1h25
+2026-05-20,14:45,Le Cineum Aurore,Cannes Premiere,LE TRIANGLE D'OR,Hélène Rosselet-Ruiz,1h30
+2026-05-20,16:30,Le Cineum Screen X,Special Screenings,HER PRIVATE HELL,Nicolas Winding Refn,1h49
+2026-05-20,16:45,Le Cineum IMAX,Cannes Premiere,KOKUROJO,Kurosawa Kiyoshi,2h27
+2026-05-20,16:45,Le Cineum Aurore,In Competition - Feature Films,HOPE,Na Hong-jin,2h40
+2026-05-20,17:00,Le Cineum Salle 3,In Competition - Feature Films,GARANCE,Jeanne Herry,2h00
+2026-05-21,08:45,Le Cineum IMAX,In Competition - Feature Films,THE MAN I LOVE,Ira Sachs,1h35
+2026-05-21,08:45,Le Cineum Aurore,In Competition - Feature Films,MINOTAUR,Andreï Zviaguintsev,2h15
+2026-05-21,09:15,Le Cineum Salle 3,Special Screenings,ROMA ELASTICA,Bertrand Mandico,1h47
+2026-05-21,09:15,Le Cineum Screen X,Un Certain Regard,BEN'IMANA,Marie-Clémentine Dusabejambo,1h36
+2026-05-21,11:00,Le Cineum IMAX,In Competition - Feature Films,NOTRE SALUT,Emmanuel Marre,2h35
+2026-05-21,11:30,Le Cineum Screen X,Un Certain Regard,LE CORSET,Louis Clichy,1h29
+2026-05-21,11:45,Le Cineum Salle 3,Un Certain Regard,ELEPHANTS IN THE FOG,Abinash Bikram Shah,1h43
+2026-05-21,11:45,Le Cineum Aurore,In Competition - Feature Films,AMARGA NAVIDAD,Pedro Almodóvar,1h52
+2026-05-21,13:45,Le Cineum Screen X,Cannes Premiere,LES SURVIVANTS DU CHE,Christophe Dimitri Réveille,1h38
+2026-05-21,14:15,Le Cineum IMAX,Special Screenings,LA BATAILLE DE GAULLE : L'ÂGE DE FER,Antonin Baudry,2h40
+2026-05-21,14:15,Le Cineum Aurore,Special Screenings,DIAMOND,Andy Garcia,1h58
+2026-05-21,14:15,Le Cineum Salle 3,Un Certain Regard,YESTERDAY THE EYE DIDN'T SLEEP,Rakan Mayasi,1h40
+2026-05-21,16:00,Le Cineum Screen X,Un Certain Regard,TITANIC OCEAN,Konstantina Kotzamani,2h10
+2026-05-21,16:30,Le Cineum Salle 3,In Competition - Feature Films,L'INCONNUE,Arthur Harari,2h19
+2026-05-21,16:45,Le Cineum Aurore,In Competition - Feature Films,FJORD,Cristian Mungiu,2h26
+2026-05-21,17:15,Le Cineum IMAX,Cannes Premiere,MARIAGE AU GOÛT D'ORANGE,Christophe Honoré,1h55
+2026-05-22,08:45,Le Cineum IMAX,In Competition - Feature Films,COWARD,Lukas Dhont,2h00
+2026-05-22,08:45,Le Cineum Aurore,In Competition - Feature Films,THE MAN I LOVE,Ira Sachs,1h35
+2026-05-22,09:15,Le Cineum Salle 3,Un Certain Regard,UĻA,Viesturs Kairišs,1h42
+2026-05-22,09:15,Le Cineum Screen X,Un Certain Regard,VICTORIAN PSYCHO,Zachary Wigon,1h30
+2026-05-22,11:15,Le Cineum Aurore,In Competition - Feature Films,NOTRE SALUT,Emmanuel Marre,2h35
+2026-05-22,11:30,Le Cineum IMAX,In Competition - Feature Films,LA BOLA NEGRA,Javier Calvo & Javier Ambrossi,2h35
+2026-05-22,14:00,Le Cineum Salle 3,In Competition - Feature Films,THE MAN I LOVE,Ira Sachs,1h35
+2026-05-22,14:30,Le Cineum Aurore,Cannes Premiere,THE END OF IT,Maria Martínez Bayona,1h42
+2026-05-22,15:00,Le Cineum IMAX,In Competition - Feature Films,DAS GETRÄUMTE ABENTEUER,Valeska Grisebach,2h47
+2026-05-22,18:45,Le Cineum Aurore,Un Certain Regard,UĻA,Viesturs Kairišs,1h42
+2026-05-23,08:45,Le Cineum IMAX,In Competition - Feature Films,HISTOIRES DE LA NUIT,Léa Mysius,1h54
+2026-05-23,08:45,Le Cineum Aurore,In Competition - Feature Films,COWARD,Lukas Dhont,2h00
+2026-05-23,09:15,Le Cineum Salle 3,In Competition - Feature Films,THE MAN I LOVE,Ira Sachs,1h35
+2026-05-23,09:15,Le Cineum Screen X,Un Certain Regard,UĻA,Viesturs Kairišs,1h42
+2026-05-23,11:30,Le Cineum Screen X,Un Certain Regard,VICTORIAN PSYCHO,Zachary Wigon,1h30
+2026-05-23,11:30,Le Cineum Aurore,In Competition - Feature Films,LA BOLA NEGRA,Javier Calvo & Javier Ambrossi,2h35
+2026-05-23,11:45,Le Cineum IMAX,In Competition - Feature Films,DAS GETRÄUMTE ABENTEUER,Valeska Grisebach,2h47
+2026-05-23,11:45,Le Cineum Salle 3,In Competition - Feature Films,NOTRE SALUT,Emmanuel Marre,2h35
+2026-05-23,13:45,Le Cineum Screen X,Cannes Premiere,THE END OF IT,Maria Martínez Bayona,1h42
+2026-05-23,14:45,Le Cineum Aurore,Out of Competition,ULYSSE,Laetitia Masson,1h37
+2026-05-23,15:00,Le Cineum IMAX,Special Screenings,L'OBJET DU DÉLIT,Agnès Jaoui,2h13
+`;
+
+// ============================================================
+// Section palette
+// ============================================================
+const SECTION_COLORS = {
+  "In Competition - Feature Films":  "#f5c518",
+  "In Competition - Short Films":    "#ffd966",
+  "Un Certain Regard":               "#5ec4ff",
+  "Out of Competition":              "#ff7a5c",
+  "Cannes Premiere":                 "#c084fc",
+  "Special Screenings":              "#34d399",
+  "Cannes Classics":                 "#a8a29e",
+  "Quinzaine des Cinéastes":         "#fb923c",
+  "Semaine de la Critique":          "#22d3ee",
+  "ACID":                            "#f472b6",
+  "La Cinef":                        "#86efac",
+};
+const DEFAULT_COLOR = "#94a3b8";
+
+// ============================================================
+// CSV parsing & helpers
+// ============================================================
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const header = lines.shift().split(',');
+  return lines.map(line => {
+    const parts = line.split(',');
+    const obj = {};
+    header.forEach((h, i) => obj[h.trim()] = (parts[i] || '').trim());
+    return obj;
+  });
+}
+
+function parseDuration(d) {
+  if (!d) return 90;
+  const m  = d.match(/(\d+)h(\d+)/); if (m)  return +m[1]*60 + +m[2];
+  const m2 = d.match(/(\d+)h/);      if (m2) return +m2[1]*60;
+  const m3 = d.match(/(\d+)min/);    if (m3) return +m3[1];
+  return 90;
+}
+function parseTime(t) { const [h,m]=t.split(':').map(n=>+n); return h*60+m; }
+function formatDuration(m) { const h=Math.floor(m/60), x=m%60; return h ? (x?`${h}h${String(x).padStart(2,'0')}`:`${h}h`) : `${x}m`; }
+function formatTimeRange(start, dur) {
+  const fmt = mm => { const t=mm%(24*60); return `${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`; };
+  return `${fmt(start)} – ${fmt(start+dur)}`;
+}
+function timeStrToMin(s) { if (!s) return null; const [h,m]=s.split(':').map(n=>+n); return h*60+m; }
+function dayLabel(iso) { return new Date(iso+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}); }
+function locationGroup(loc) { return loc.startsWith('Le Cineum') ? 'Le Cineum' : loc; }
+function filmId(r) { return `${r.Date}|${r.Time}|${r.Location}|${r['Film Title']}`; }
+
+// ============================================================
+// State
+// ============================================================
+let ALL_ROWS = [];
+let DATES = [];
+let ALL_SECTIONS = [];
+let LOCATION_GROUPS_ALL = [];
+
+const PX_PER_MIN = 2.6;
+const HOUR_PX = 60 * PX_PER_MIN;
+
+const LOCATION_ORDER = [
+  "Grand Théâtre Lumière","Salle Debussy","Salle Bazin","Salle Buñuel","Salle Agnès Varda",
+  "Théâtre Croisette","Espace Miramar","Olympia","Le Cineum IMAX","Le Cineum Aurore",
+  "Le Cineum Salle 3","Le Cineum Screen X","Alexandre III","Les Arcades","Le Raimu",
+  "Studio 13","Plage Macé Brigitte Bardot",
+];
+
+const filterState = {
+  sections:   new Set(),  // populated after CSV load
+  locations:  new Set(),
+  timeFrom:   null,
+  timeTo:     null,
+  search:     '',
+};
+
+let currentView = 'all';      // 'all' | 'schedule'
+let currentDate = null;
+let scheduleMode = 'list';    // 'list' | 'gantt'
+let scheduleDate = null;      // selected day inside the schedule gantt view
+
+// localStorage-backed picks
+const STORE_KEY = 'cannes_my_schedule_v1';
+function loadPicks() {
+  try { return new Set(JSON.parse(localStorage.getItem(STORE_KEY) || '[]')); }
+  catch { return new Set(); }
+}
+function savePicks() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify([...mySchedule])); }
+  catch (e) { console.warn('localStorage unavailable, picks will not persist:', e); }
+}
+let mySchedule = loadPicks();
+
+// ============================================================
+// CSV loader: try fetch first (works on http://, GitHub Pages),
+// fall back to embedded copy when fetch fails (file://).
+// ============================================================
+async function loadCSV() {
+  const sourceEl = document.getElementById('dataSource');
+  try {
+    const res = await fetch('./cannes_schedule.csv', { cache: 'no-cache' });
+    if (res.ok) {
+      const text = await res.text();
+      sourceEl.textContent = '· live CSV';
+      sourceEl.title = 'Loaded from cannes_schedule.csv next to this page';
+      return text;
+    }
+  } catch (e) { /* fall through */ }
+  sourceEl.textContent = '· embedded CSV';
+  sourceEl.title = 'Could not fetch CSV (likely opened via file://). Using built-in copy.';
+  return EMBEDDED_CSV;
+}
+
+// ============================================================
+// Init
+// ============================================================
+(async function init() {
+  const text = await loadCSV();
+  ALL_ROWS = parseCSV(text);
+  ALL_ROWS.forEach(r => {
+    r.startMin = parseTime(r.Time);
+    r.durMin   = parseDuration(r.Duration);
+    r.id       = filmId(r);
+  });
+  DATES = [...new Set(ALL_ROWS.map(r => r.Date))].sort();
+  currentDate  = DATES[0];
+  scheduleDate = DATES[0];
+
+  ALL_SECTIONS = [...new Set(ALL_ROWS.map(r => r.Section))]
+    .sort((a,b) => {
+      const order = Object.keys(SECTION_COLORS);
+      const ai = order.indexOf(a), bi = order.indexOf(b);
+      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+    });
+  LOCATION_GROUPS_ALL = (() => {
+    const seen = new Set(), order = [];
+    LOCATION_ORDER.forEach(l => {
+      const g = locationGroup(l);
+      if (!seen.has(g)) { seen.add(g); order.push(g); }
+    });
+    [...new Set(ALL_ROWS.map(r => locationGroup(r.Location)))].forEach(g => {
+      if (!seen.has(g)) { seen.add(g); order.push(g); }
+    });
+    return order;
+  })();
+  // Initialize filter state to "everything on"
+  filterState.sections  = new Set(ALL_SECTIONS);
+  filterState.locations = new Set(LOCATION_GROUPS_ALL);
+
+  buildDayButtons();
+  bindFilterActions();
+  render();
+})();
+
+// ============================================================
+// UI helpers
+// ============================================================
+function buildDayButtons() {
+  const dayBtns = document.getElementById('dayButtons');
+  dayBtns.innerHTML = '';
+  DATES.forEach(d => {
+    const b = document.createElement('button');
+    b.className = 'day-btn';
+    b.textContent = dayLabel(d);
+    b.dataset.date = d;
+    b.addEventListener('click', () => {
+      if (currentView === 'all')      currentDate  = d;
+      else                            scheduleDate = d;
+      render();
+    });
+    dayBtns.appendChild(b);
+  });
+}
+
+function bindFilterActions() {
+  // Tabs
+  document.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentView = btn.dataset.view;
+      render();
+    });
+  });
+  // Schedule mode toggle
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      scheduleMode = btn.dataset.mode;
+      render();
+    });
+  });
+  // Clear-all picks
+  document.getElementById('clearAllPicks').addEventListener('click', () => {
+    if (mySchedule.size === 0) return;
+    if (confirm(`Remove all ${mySchedule.size} films from your schedule?`)) {
+      mySchedule.clear(); savePicks(); render();
+    }
+  });
+
+  // Quick actions inside dropdown menus and the time bar
+  document.querySelectorAll('[data-act]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const act = btn.dataset.act;
+      if (act === 'sec-all') {
+        currentDaySections().forEach(s => filterState.sections.add(s));
+      } else if (act === 'sec-none') {
+        currentDaySections().forEach(s => filterState.sections.delete(s));
+      } else if (act === 'loc-all') {
+        currentDayLocationGroups().forEach(g => filterState.locations.add(g));
+      } else if (act === 'loc-none') {
+        currentDayLocationGroups().forEach(g => filterState.locations.delete(g));
+      } else if (act === 'time-clear') {
+        filterState.timeFrom = null; filterState.timeTo = null;
+        document.getElementById('timeFrom').value = '';
+        document.getElementById('timeTo').value = '';
+      }
+      render();
+    });
+  });
+
+  // Dropdown open/close
+  setupDropdowns();
+
+  // Time inputs
+  document.getElementById('timeFrom').addEventListener('change', e => {
+    filterState.timeFrom = timeStrToMin(e.target.value); render();
+  });
+  document.getElementById('timeTo').addEventListener('change', e => {
+    filterState.timeTo = timeStrToMin(e.target.value); render();
+  });
+  document.querySelectorAll('.time-quick button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const map = {
+        morning:   ['08:00','12:00'],
+        afternoon: ['12:00','18:00'],
+        evening:   ['18:00','23:59'],
+      };
+      const [from, to] = map[btn.dataset.tw];
+      document.getElementById('timeFrom').value = from;
+      document.getElementById('timeTo').value   = to;
+      filterState.timeFrom = timeStrToMin(from);
+      filterState.timeTo   = timeStrToMin(to);
+      render();
+    });
+  });
+
+  // Search
+  document.getElementById('searchInput').addEventListener('input', e => {
+    filterState.search = e.target.value.trim().toLowerCase();
+    render();
+  });
+}
+
+// Sections / location groups present on the currently selected day (BEFORE other filters)
+function currentDaySections() {
+  const d = currentDate;
+  return ALL_SECTIONS.filter(s => ALL_ROWS.some(r => r.Date === d && r.Section === s));
+}
+function currentDayLocationGroups() {
+  const d = currentDate;
+  return LOCATION_GROUPS_ALL.filter(g =>
+    ALL_ROWS.some(r => r.Date === d && locationGroup(r.Location) === g));
+}
+
+function summarizeSelection(allItems, selectedSet, allLabel, oneLabel) {
+  // allItems: items currently relevant on this day
+  // selectedSet: filterState set
+  const selectedHere = allItems.filter(i => selectedSet.has(i));
+  if (allItems.length === 0)        return 'None on this day';
+  if (selectedHere.length === 0)    return `${allLabel}: none`;
+  if (selectedHere.length === allItems.length) return `All ${allLabel}`;
+  if (selectedHere.length === 1)    return selectedHere[0];
+  return `${selectedHere.length} ${oneLabel}`;
+}
+
+function rebuildSectionDropdown() {
+  const opts = document.getElementById('sectionOptions');
+  const btn  = document.getElementById('ddSectionsBtn');
+  opts.innerHTML = '';
+  const sections = currentDaySections();
+  if (sections.length === 0) {
+    opts.innerHTML = '<div class="dd-empty">No sections on this day.</div>';
+    btn.textContent = 'No sections';
+    return;
+  }
+  sections.forEach(sec => {
+    const col = SECTION_COLORS[sec] || DEFAULT_COLOR;
+    const opt = document.createElement('div');
+    opt.className = 'dd-option' + (filterState.sections.has(sec) ? ' checked' : '');
+    opt.dataset.section = sec;
+    opt.innerHTML = `<div class="dd-check"></div><span class="dot" style="background:${col}"></span><span>${sec}</span>`;
+    opt.addEventListener('click', () => {
+      if (filterState.sections.has(sec)) filterState.sections.delete(sec);
+      else filterState.sections.add(sec);
+      render();
+    });
+    opts.appendChild(opt);
+  });
+  btn.textContent = '';
+  const summary = summarizeSelection(sections, filterState.sections, 'sections', 'sections');
+  btn.appendChild(document.createTextNode(summary));
+  // Also show count pill if subset
+  const sel = sections.filter(s => filterState.sections.has(s)).length;
+  if (sel > 0 && sel < sections.length) {
+    const pill = document.createElement('span');
+    pill.className = 'pill';
+    pill.textContent = sel;
+    btn.appendChild(pill);
+  }
+}
+
+function rebuildLocationDropdown() {
+  const opts = document.getElementById('locationOptions');
+  const btn  = document.getElementById('ddLocationsBtn');
+  opts.innerHTML = '';
+  const groups = currentDayLocationGroups();
+  if (groups.length === 0) {
+    opts.innerHTML = '<div class="dd-empty">No venues on this day.</div>';
+    btn.textContent = 'No venues';
+    return;
+  }
+  groups.forEach(grp => {
+    const opt = document.createElement('div');
+    opt.className = 'dd-option' + (filterState.locations.has(grp) ? ' checked' : '');
+    opt.dataset.location = grp;
+    opt.innerHTML = `<div class="dd-check"></div><span>${grp}</span>`;
+    opt.addEventListener('click', () => {
+      if (filterState.locations.has(grp)) filterState.locations.delete(grp);
+      else filterState.locations.add(grp);
+      render();
+    });
+    opts.appendChild(opt);
+  });
+  btn.textContent = '';
+  const summary = summarizeSelection(groups, filterState.locations, 'venues', 'venues');
+  btn.appendChild(document.createTextNode(summary));
+  const sel = groups.filter(g => filterState.locations.has(g)).length;
+  if (sel > 0 && sel < groups.length) {
+    const pill = document.createElement('span');
+    pill.className = 'pill';
+    pill.textContent = sel;
+    btn.appendChild(pill);
+  }
+}
+
+// Wire up dropdown open/close behavior once
+function setupDropdowns() {
+  const setup = (btnId, ddId) => {
+    const btn = document.getElementById(btnId);
+    const dd  = document.getElementById(ddId);
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const wasOpen = dd.classList.contains('open');
+      // Close all dropdowns first
+      document.querySelectorAll('.dd.open').forEach(d => d.classList.remove('open'));
+      if (!wasOpen) dd.classList.add('open');
+    });
+  };
+  setup('ddSectionsBtn', 'ddSections');
+  setup('ddLocationsBtn', 'ddLocations');
+  // Click anywhere else to close
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.dd')) {
+      document.querySelectorAll('.dd.open').forEach(d => d.classList.remove('open'));
+    }
+  });
+}
+
+// ============================================================
+// Tooltip
+// ============================================================
+const tip = document.getElementById('tip');
+function showTip(e, r) {
+  const isSaved = mySchedule.has(r.id);
+  tip.innerHTML = `
+    <div class="t-title">${r['Film Title']}</div>
+    ${r.Director ? `<div class="t-row">${r.Director}</div>` : ''}
+    <div class="t-row"><strong>${formatTimeRange(r.startMin, r.durMin)}</strong> · ${formatDuration(r.durMin)}</div>
+    <div class="t-row">${r.Location}</div>
+    <div class="t-row" style="color:${SECTION_COLORS[r.Section] || DEFAULT_COLOR}">${r.Section}</div>
+    <div class="t-hint">${isSaved ? '★ in your schedule — click ★ to remove' : 'Click ★ to add to your schedule'}</div>`;
+  tip.classList.add('show'); moveTip(e);
+}
+function moveTip(e) {
+  const pad = 14; let x = e.clientX + pad, y = e.clientY + pad;
+  const r = tip.getBoundingClientRect();
+  if (x + r.width  > window.innerWidth  - 8) x = e.clientX - r.width  - pad;
+  if (y + r.height > window.innerHeight - 8) y = e.clientY - r.height - pad;
+  tip.style.left = x+'px'; tip.style.top = y+'px';
+}
+function hideTip() { tip.classList.remove('show'); }
+
+// ============================================================
+// Master render: dispatches based on currentView
+// ============================================================
+function render() {
+  // Tab styles
+  document.querySelectorAll('.tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.view === currentView));
+  document.getElementById('picksCount').textContent = mySchedule.size;
+
+  // Show/hide bits per view
+  const showAll      = currentView === 'all';
+  const showSchedule = currentView === 'schedule';
+  document.getElementById('filtersBar').classList.toggle('hidden', !showAll);
+  document.getElementById('legend').classList.toggle('hidden', !showAll && scheduleMode === 'list');
+  document.getElementById('chartWrap').classList.toggle('hidden',
+    showSchedule && scheduleMode === 'list');
+  document.getElementById('scheduleList').classList.toggle('hidden',
+    !(showSchedule && scheduleMode === 'list'));
+  document.getElementById('scheduleMode').classList.toggle('hidden', !showSchedule);
+
+  // Day buttons: "all" view always; "schedule + gantt" only days with picks
+  const dayBtnsRoot = document.getElementById('dayButtons');
+  if (showAll) {
+    dayBtnsRoot.classList.remove('hidden');
+    dayBtnsRoot.querySelectorAll('.day-btn').forEach(b => {
+      b.disabled = false;
+      b.classList.toggle('active', b.dataset.date === currentDate);
+    });
+  } else if (scheduleMode === 'gantt') {
+    dayBtnsRoot.classList.remove('hidden');
+    const daysWithPicks = new Set(ALL_ROWS.filter(r => mySchedule.has(r.id)).map(r => r.Date));
+    if (!daysWithPicks.has(scheduleDate)) {
+      const first = [...daysWithPicks].sort()[0];
+      if (first) scheduleDate = first;
+    }
+    dayBtnsRoot.querySelectorAll('.day-btn').forEach(b => {
+      b.disabled = !daysWithPicks.has(b.dataset.date);
+      b.classList.toggle('active', b.dataset.date === scheduleDate);
+    });
+  } else {
+    dayBtnsRoot.classList.add('hidden');
+  }
+  document.querySelectorAll('.mode-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.mode === scheduleMode));
+
+  if (showAll) {
+    renderAllView();
+  } else {
+    if (scheduleMode === 'list') renderScheduleList();
+    else renderScheduleGantt();
+  }
+}
+
+// ============================================================
+// "All Screenings" view
+// ============================================================
+function renderAllView() {
+  rebuildSectionDropdown();
+  rebuildLocationDropdown();
+
+  const allDayRows = ALL_ROWS.filter(r => r.Date === currentDate);
+  const q = filterState.search;
+  const dayRows = allDayRows.filter(r => {
+    if (!filterState.sections.has(r.Section)) return false;
+    if (!filterState.locations.has(locationGroup(r.Location))) return false;
+    if (filterState.timeFrom != null && r.startMin < filterState.timeFrom) return false;
+    if (filterState.timeTo   != null && (r.startMin + r.durMin) > filterState.timeTo) return false;
+    if (q) {
+      const hay = ((r['Film Title']||'') + ' ' + (r.Director||'')).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  const total = allDayRows.length, shown = dayRows.length;
+  document.getElementById('stats').textContent =
+    (shown === total ? `${total} screening${total===1?'':'s'} · ${dayLabel(currentDate)}`
+                     : `${shown} of ${total} screenings · ${dayLabel(currentDate)}`);
+
+  drawLegend(dayRows);
+  drawChart(dayRows);
+}
+
+// ============================================================
+// "My Schedule — Gantt" view
+// ============================================================
+function renderScheduleGantt() {
+  const picks = ALL_ROWS.filter(r => mySchedule.has(r.id) && r.Date === scheduleDate);
+  document.getElementById('stats').textContent =
+    `${mySchedule.size} pick${mySchedule.size===1?'':'s'} total · ${picks.length} on ${dayLabel(scheduleDate)}`;
+  drawLegend(picks);
+  drawChart(picks);
+}
+
+// ============================================================
+// "My Schedule — List" view
+// ============================================================
+function renderScheduleList() {
+  const list = document.getElementById('scheduleList');
+  list.innerHTML = '';
+  const picks = ALL_ROWS.filter(r => mySchedule.has(r.id))
+                       .sort((a,b) => a.Date.localeCompare(b.Date) || a.startMin - b.startMin);
+  document.getElementById('stats').textContent =
+    `${picks.length} pick${picks.length===1?'':'s'} across ${new Set(picks.map(p=>p.Date)).size} day(s)`;
+
+  if (picks.length === 0) {
+    list.innerHTML = `<div class="schedule-empty">
+      Your schedule is empty.
+      <div class="hint">Click the ★ on any film in the All Screenings tab to add it here.</div>
+    </div>`;
+    return;
+  }
+
+  // Group by date
+  const byDate = {};
+  picks.forEach(p => { (byDate[p.Date] ||= []).push(p); });
+  Object.keys(byDate).sort().forEach(date => {
+    const dayPicks = byDate[date];
+    // Detect conflicts: two picks whose time ranges overlap.
+    const conflictIds = new Set();
+    for (let i=0;i<dayPicks.length;i++) {
+      for (let j=i+1;j<dayPicks.length;j++) {
+        const a=dayPicks[i], b=dayPicks[j];
+        if (a.startMin < b.startMin + b.durMin && b.startMin < a.startMin + a.durMin) {
+          conflictIds.add(a.id); conflictIds.add(b.id);
+        }
+      }
+    }
+
+    const block = document.createElement('div');
+    block.className = 'day-block';
+
+    const header = document.createElement('div');
+    header.className = 'day-block-header';
+    const conflictText = conflictIds.size
+      ? `<span class="conflict-warn">${Math.floor(conflictIds.size/2*2)/2 ? '⚠' : ''} ${countConflictPairs(dayPicks)} conflict${countConflictPairs(dayPicks)===1?'':'s'}</span>`
+      : '';
+    header.innerHTML = `<span>${dayLabel(date)}</span>
+      <span class="count">${dayPicks.length} film${dayPicks.length===1?'':'s'}</span>
+      ${conflictText}`;
+    block.appendChild(header);
+
+    dayPicks.forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'pick-row' + (conflictIds.has(p.id) ? ' conflict' : '');
+      const col = SECTION_COLORS[p.Section] || DEFAULT_COLOR;
+      row.innerHTML = `
+        <div class="time">${formatTimeRange(p.startMin, p.durMin)}</div>
+        <div>
+          <div class="title"><span class="section-tag" style="background:${col}"></span>${p['Film Title']}</div>
+          <div class="director">${p.Director || ''}</div>
+        </div>
+        <div class="director">${formatDuration(p.durMin)} · ${p.Section}</div>
+        <div class="venue">${p.Location}</div>
+        <button class="remove" title="Remove from schedule">×</button>`;
+      row.querySelector('.remove').addEventListener('click', () => {
+        mySchedule.delete(p.id); savePicks(); render();
+      });
+      block.appendChild(row);
+    });
+
+    list.appendChild(block);
+  });
+}
+
+function countConflictPairs(rows) {
+  let n = 0;
+  for (let i=0;i<rows.length;i++) {
+    for (let j=i+1;j<rows.length;j++) {
+      const a=rows[i], b=rows[j];
+      if (a.startMin < b.startMin + b.durMin && b.startMin < a.startMin + a.durMin) n++;
+    }
+  }
+  return n;
+}
+
+// ============================================================
+// Legend (sections actually visible in given rows)
+// ============================================================
+function drawLegend(rows) {
+  const legendEl = document.getElementById('legend');
+  legendEl.innerHTML = '';
+  const sections = [...new Set(rows.map(r => r.Section))]
+    .sort((a,b) => {
+      const o = Object.keys(SECTION_COLORS);
+      const ai = o.indexOf(a), bi = o.indexOf(b);
+      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+    });
+  if (sections.length === 0) {
+    legendEl.innerHTML = '<div class="legend-empty">No screenings to show.</div>';
+    return;
+  }
+  sections.forEach(sec => {
+    const col = SECTION_COLORS[sec] || DEFAULT_COLOR;
+    const el = document.createElement('div');
+    el.className = 'legend-item';
+    el.innerHTML = `<span class="legend-swatch" style="background:${col}"></span><span>${sec}</span>`;
+    legendEl.appendChild(el);
+  });
+}
+
+// ============================================================
+// Gantt chart drawing (used by both the All view and Schedule-Gantt view)
+// ============================================================
+function drawChart(rows) {
+  const yAxis = document.getElementById('yAxis');
+  const lanes = document.getElementById('lanes');
+  const timeline = document.getElementById('timeline');
+  yAxis.innerHTML = ''; lanes.innerHTML = ''; timeline.innerHTML = '';
+
+  if (rows.length === 0) {
+    lanes.innerHTML = '<div class="empty">No screenings to display with the current filters.</div>';
+    timeline.style.width = '600px'; lanes.style.width = '600px';
+    return;
+  }
+
+  // Locations present
+  const present = new Set(rows.map(r => r.Location));
+  const locations = LOCATION_ORDER.filter(l => present.has(l));
+  [...present].forEach(l => { if (!locations.includes(l)) locations.push(l); });
+
+  // Time window snapped to whole hours
+  const minStart = Math.min(...rows.map(r => r.startMin));
+  const maxEnd   = Math.max(...rows.map(r => r.startMin + r.durMin));
+  const DAY_START = Math.max(0, Math.floor(minStart/60)*60);
+  const DAY_END   = Math.ceil(maxEnd/60)*60;
+  const TOTAL_MIN = DAY_END - DAY_START;
+  const chartWidth = TOTAL_MIN * PX_PER_MIN;
+  document.documentElement.style.setProperty('--hour-px', HOUR_PX + 'px');
+
+  // Timeline ticks
+  timeline.style.width = chartWidth + 'px';
+  for (let m = 0; m <= TOTAL_MIN; m += 60) {
+    const tick = document.createElement('div');
+    tick.className = 'tick' + (m % 120 === 0 ? ' major' : '');
+    tick.style.left = (m * PX_PER_MIN) + 'px';
+    const total = (DAY_START + m) % (24*60);
+    const lbl = document.createElement('span');
+    lbl.className = 'tick-label';
+    lbl.textContent = String(Math.floor(total/60)).padStart(2,'0') + ':00';
+    tick.appendChild(lbl);
+    timeline.appendChild(tick);
+  }
+
+  lanes.style.width = chartWidth + 'px';
+
+  const SUB_HEIGHT = 56;
+  locations.forEach(loc => {
+    const films = rows.filter(r => r.Location === loc).sort((a,b) => a.startMin - b.startMin);
+    // Sub-track assignment so overlaps stack
+    const trackEnds = [], trackOf = [];
+    films.forEach((r, i) => {
+      let placed = -1;
+      for (let t = 0; t < trackEnds.length; t++) {
+        if (trackEnds[t] <= r.startMin) { placed = t; break; }
+      }
+      if (placed === -1) { placed = trackEnds.length; trackEnds.push(r.startMin + r.durMin); }
+      else { trackEnds[placed] = r.startMin + r.durMin; }
+      trackOf[i] = placed;
+    });
+    const numTracks = Math.max(1, trackEnds.length);
+    const laneHeight = numTracks * SUB_HEIGHT;
+
+    // Y-axis cell
+    const yCell = document.createElement('div');
+    yCell.className = 'y-cell';
+    yCell.style.height = laneHeight + 'px';
+    yCell.textContent = loc;
+    yAxis.appendChild(yCell);
+
+    // Lane
+    const lane = document.createElement('div');
+    lane.className = 'lane';
+    lane.style.width = chartWidth + 'px';
+    lane.style.height = laneHeight + 'px';
+    const lg = document.createElement('div');
+    lg.className = 'lane-grid';
+    lane.appendChild(lg);
+    for (let t = 1; t < numTracks; t++) {
+      const dv = document.createElement('div');
+      dv.className = 'sub-divider';
+      dv.style.top = (t * SUB_HEIGHT) + 'px';
+      lane.appendChild(dv);
+    }
+
+    films.forEach((r, i) => {
+      const left  = (r.startMin - DAY_START) * PX_PER_MIN;
+      const width = Math.max(r.durMin * PX_PER_MIN, 30);
+      const top   = trackOf[i] * SUB_HEIGHT + 4;
+      const height = SUB_HEIGHT - 8;
+      const color = SECTION_COLORS[r.Section] || DEFAULT_COLOR;
+
+      const bar = document.createElement('div');
+      bar.className = 'bar' + (mySchedule.has(r.id) ? ' saved' : '');
+      bar.style.cssText = `left:${left}px;width:${width}px;top:${top}px;height:${height}px;background:${color};`;
+
+      const titleEl = document.createElement('div');
+      titleEl.className = 'title'; titleEl.textContent = r['Film Title'];
+      const metaEl = document.createElement('div');
+      metaEl.className = 'meta';
+      const meta = [r.Time];
+      if (r.Duration) meta.push(r.Duration);
+      if (r.Director) meta.push(r.Director);
+      metaEl.textContent = meta.join(' · ');
+
+      // Star (add/remove from schedule)
+      const star = document.createElement('div');
+      star.className = 'star';
+      star.textContent = mySchedule.has(r.id) ? '★' : '☆';
+      star.title = 'Toggle in My Schedule';
+      star.addEventListener('click', e => {
+        e.stopPropagation();
+        if (mySchedule.has(r.id)) mySchedule.delete(r.id);
+        else mySchedule.add(r.id);
+        savePicks();
+        render();
+      });
+
+      bar.appendChild(titleEl);
+      bar.appendChild(metaEl);
+      bar.appendChild(star);
+
+      bar.addEventListener('mouseenter', e => showTip(e, r));
+      bar.addEventListener('mousemove', moveTip);
+      bar.addEventListener('mouseleave', hideTip);
+
+      lane.appendChild(bar);
+    });
+
+    lanes.appendChild(lane);
+  });
+}
+</script>
+</body>
+</html>
