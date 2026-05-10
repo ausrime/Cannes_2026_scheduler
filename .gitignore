@@ -6,3 +6,8 @@
 .vscode/
 .idea/
 *.swp
+
+# Personal Letterboxd data — keep local only
+letterboxd-*.zip
+.lb_data/
+hype.json
