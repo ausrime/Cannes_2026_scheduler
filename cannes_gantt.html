@@ -179,6 +179,21 @@
   }
   .time-clear-btn:hover { color: var(--text); border-color: #3a4150; }
 
+  /* "Interested only" filter toggle */
+  .interest-toggle {
+    background: var(--panel-2); color: var(--muted);
+    border: 1px solid var(--line); border-radius: 6px;
+    padding: 6px 10px; font-size: 12.5px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+    user-select: none;
+  }
+  .interest-toggle:hover { color: var(--text); border-color: #3a4150; }
+  .interest-toggle.on {
+    background: #f472b6; color: #1a1a1a; border-color: #f472b6; font-weight: 600;
+  }
+  .interest-toggle .interest-count { opacity: 0.75; font-size: 11px; }
+  .interest-toggle.on .interest-count { opacity: 1; }
+
   .legend {
     display: flex; flex-wrap: wrap; gap: 8px 14px; padding: 10px 24px;
     background: var(--panel); border-bottom: 1px solid var(--line); font-size: 12px;
@@ -206,12 +221,15 @@
   .y-axis { background: var(--panel); border-right: 1px solid var(--line); position: sticky; left: 0; z-index: 5; }
   .y-cell {
     padding: 6px 10px;
-    display: flex; align-items: center;
+    display: flex; flex-direction: column; justify-content: center;
     font-size: 12px;
     border-bottom: 1px solid var(--line);
     line-height: 1.25;
+    overflow: hidden;
   }
   .y-cell:nth-child(even) { background: var(--row-alt); }
+  .y-cell-name { color: var(--text); }
+  .y-cell-note { color: var(--muted); font-size: 10.5px; margin-top: 2px; opacity: 0.9; }
 
   .grid { position: relative; }
   .timeline { position: relative; height: 36px; border-bottom: 1px solid var(--line); }
@@ -246,7 +264,7 @@
   .bar {
     position: absolute;
     border-radius: 5px;
-    padding: 4px 22px 4px 8px;
+    padding: 4px 22px 4px 26px;       /* room for heart (left) + star (right) */
     overflow: hidden;
     cursor: pointer;
     color: #0d0d0d;
@@ -262,10 +280,18 @@
     z-index: 4 !important;
   }
   .bar.saved { box-shadow: 0 0 0 2px var(--accent), 0 4px 12px rgba(0,0,0,0.5); }
+  /* Pink left stripe = "I'm interested in this film" */
+  .bar.interested::before {
+    content: '';
+    position: absolute; top: 0; bottom: 0; left: 0; width: 3px;
+    background: #f472b6;
+    border-radius: 5px 0 0 5px;
+    pointer-events: none;
+  }
   .bar .title { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .bar .meta { font-weight: 400; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10.5px; margin-top: 2px; }
-  .bar .star {
-    position: absolute; top: 4px; right: 4px;
+  .bar .star, .bar .heart {
+    position: absolute; top: 4px;
     width: 18px; height: 18px;
     display: flex; align-items: center; justify-content: center;
     background: rgba(0,0,0,0.18); border-radius: 50%;
@@ -273,8 +299,11 @@
     color: rgba(0,0,0,0.55);
     transition: transform 0.1s;
   }
-  .bar .star:hover { transform: scale(1.15); color: rgba(0,0,0,0.85); }
+  .bar .star  { right: 4px; }
+  .bar .heart { left: 4px; }
+  .bar .star:hover, .bar .heart:hover { transform: scale(1.15); color: rgba(0,0,0,0.85); }
   .bar.saved .star { background: #1a1a1a; color: var(--accent); }
+  .bar.interested .heart { background: #1a1a1a; color: #f472b6; }
 
   .empty { padding: 60px 30px; text-align: center; color: var(--muted); }
 
@@ -336,6 +365,151 @@
   }
   .schedule-empty .hint { margin-top: 8px; font-size: 12px; }
 
+  /* ============================================================
+     Hype tab
+     ============================================================ */
+  .hype-toolbar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
+    padding: 12px 24px;
+    background: #12151b;
+    border-bottom: 1px solid var(--line);
+  }
+  .hype-toolbar .filter-group { display: flex; align-items: center; gap: 6px; }
+  .hype-toolbar select.sort-select {
+    background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 6px;
+    padding: 6px 10px; font-size: 12.5px;
+    color-scheme: dark;
+  }
+  .hype-toolbar .updated {
+    margin-left: auto; color: var(--muted); font-size: 11.5px;
+  }
+  .hype-toolbar .updated.stale { color: #ff7a5c; }
+
+  .hype-banner {
+    margin: 12px 24px 0; padding: 10px 14px;
+    border: 1px solid var(--line); border-radius: 6px;
+    background: rgba(245,197,24,0.06);
+    color: var(--muted); font-size: 12.5px; line-height: 1.45;
+  }
+  .hype-banner strong { color: var(--text); }
+
+  .hype-list { padding: 14px 24px 30px; display: flex; flex-direction: column; gap: 10px; }
+
+  .hype-card {
+    display: grid; grid-template-columns: 4px 1fr;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    overflow: hidden;
+  }
+  .hype-stripe { background: var(--muted); }
+  .hype-content { padding: 12px 14px; min-width: 0; }
+
+  .hype-row1 {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px;
+    margin-bottom: 4px;
+  }
+  .hype-title { font-weight: 700; font-size: 15px; color: var(--text); }
+  .hype-director { color: var(--muted); font-size: 13px; }
+  .hype-card .heart-btn {
+    margin-left: auto;
+    width: 30px; height: 30px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%; cursor: pointer; user-select: none;
+    background: var(--panel-2); color: var(--muted);
+    border: 1px solid var(--line); font-size: 16px;
+    flex-shrink: 0;
+    transition: transform 0.1s;
+  }
+  .hype-card .heart-btn:hover { transform: scale(1.1); color: #f472b6; border-color: #f472b6; }
+  .hype-card .heart-btn.on { background: #f472b6; color: #1a1a1a; border-color: #f472b6; }
+  .hype-card.interested { box-shadow: 0 0 0 1px #f472b6; }
+
+  .hype-meta {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px;
+    color: var(--muted); font-size: 12px; margin-bottom: 8px;
+  }
+  .hype-meta .section-tag {
+    display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+    margin-right: 4px;
+  }
+  .hype-meta .sep::before { content: '·'; margin: 0 4px; }
+
+  .hype-scores {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-bottom: 6px;
+  }
+  .score-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px; border-radius: 12px;
+    background: var(--panel-2); border: 1px solid var(--line);
+    font-size: 12px;
+  }
+  .score-chip .score-label { color: var(--muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px; }
+  .score-chip .score-value { font-weight: 600; color: var(--text); }
+  .score-chip.empty .score-value { color: var(--muted); font-weight: 400; }
+
+  .hype-buzz {
+    display: inline-block; padding: 3px 10px; border-radius: 4px;
+    font-size: 11.5px; font-weight: 600; margin-bottom: 8px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .hype-buzz.high   { background: rgba(245,197,24,0.18); color: var(--accent); }
+  .hype-buzz.medium { background: rgba(94,196,255,0.15); color: #5ec4ff; }
+  .hype-buzz.low    { background: rgba(154,164,180,0.12); color: var(--muted); }
+  .hype-buzz.none   { background: transparent; color: var(--muted); border: 1px dashed var(--line); }
+  .hype-buzz.under  { background: rgba(244,114,182,0.18); color: #f472b6; }
+
+  .hype-rationale { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+  .hype-rationale.with-buzz { display: inline; margin-left: 8px; vertical-align: middle; color: var(--muted); font-weight: 400; text-transform: none; letter-spacing: 0; }
+
+  .hype-reviews { margin: 8px 0; display: flex; flex-direction: column; gap: 5px; }
+  .review {
+    font-size: 12.5px; line-height: 1.45; color: #cbd2dc;
+    padding-left: 10px; border-left: 2px solid var(--line);
+  }
+  .review .review-source { color: var(--muted); margin-left: 6px; }
+  .review a { color: inherit; text-decoration: underline dotted; text-underline-offset: 2px; }
+  .review.positive { border-left-color: #34d399; }
+  .review.mixed    { border-left-color: var(--accent); }
+  .review.negative { border-left-color: #ff7a5c; }
+
+  .hype-screenings { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+  .hype-screenings-head {
+    color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .hype-screening {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 0; font-size: 12.5px;
+  }
+  .hype-screening .when { font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; min-width: 110px; }
+  .hype-screening .where { color: var(--muted); flex: 1; min-width: 0; }
+  .hype-screening .star {
+    width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid var(--line); border-radius: 50%;
+    color: var(--muted); cursor: pointer; font-size: 14px;
+    flex-shrink: 0;
+    transition: background 0.1s, color 0.1s;
+  }
+  .hype-screening .star.on { background: var(--accent); color: #1a1a1a; border-color: var(--accent); }
+  .hype-screening .star:hover { color: var(--accent); }
+  .hype-screening .star.on:hover { color: #1a1a1a; }
+
+  .hype-empty-state {
+    padding: 60px 30px; text-align: center; color: var(--muted);
+  }
+
+  @media (max-width: 768px) {
+    .hype-toolbar { padding: 10px 14px; gap: 8px; }
+    .hype-banner { margin: 10px 14px 0; }
+    .hype-list { padding: 12px 14px; }
+    .hype-card { grid-template-columns: 3px 1fr; }
+    .hype-content { padding: 10px 12px; }
+    .hype-title { font-size: 14px; }
+    .hype-screening .when { min-width: 96px; font-size: 12px; }
+    .hype-screening .star { width: 28px; height: 28px; }
+  }
+
   .hidden { display: none !important; }
 
   /* ============================================================
@@ -386,14 +560,16 @@
     .timeline { height: 28px; }
     .tick { font-size: 10px; padding-top: 5px; }
 
-    /* Bigger touch target for the star + slightly larger bar text */
-    .bar { padding: 4px 26px 4px 6px; font-size: 11px; }
+    /* Bigger touch targets for star + heart */
+    .bar { padding: 4px 30px 4px 30px; font-size: 11px; }
     .bar .meta { font-size: 10px; margin-top: 1px; }
-    .bar .star {
-      top: 3px; right: 3px;
+    .bar .star, .bar .heart {
+      top: 3px;
       width: 22px; height: 22px;
       font-size: 14px;
     }
+    .bar .star  { right: 3px; }
+    .bar .heart { left: 3px; }
 
     /* My-schedule list: stack columns into cards */
     .schedule-list { padding: 12px 14px; }
@@ -434,6 +610,7 @@
   <div class="tabs">
     <button class="tab active" data-view="all">All Screenings</button>
     <button class="tab" data-view="schedule">My Schedule <span class="count" id="picksCount">0</span></button>
+    <button class="tab" data-view="hype">Hype</button>
   </div>
   <div class="controls">
     <div class="day-buttons" id="dayButtons"></div>
@@ -482,6 +659,14 @@
   </div>
 
   <div class="filter-group">
+    <button class="interest-toggle" id="interestToggle" type="button" title="Show only films you've marked with a heart">
+      <span>♥</span>
+      <span>Interested only</span>
+      <span class="interest-count" id="interestCount"></span>
+    </button>
+  </div>
+
+  <div class="filter-group">
     <span class="filter-label">Time</span>
     <div class="time-inputs">
       <input type="time" id="timeFrom" />
@@ -510,9 +695,45 @@
 
 <div class="schedule-list hidden" id="scheduleList"></div>
 
+<!-- Hype tab -->
+<div class="hype-toolbar hidden" id="hypeToolbar">
+  <div class="filter-group">
+    <span class="filter-label">Sort</span>
+    <select class="sort-select" id="hypeSort">
+      <option value="buzz">Most buzz</option>
+      <option value="under">Under the radar</option>
+      <option value="premiere">Soonest premiere</option>
+      <option value="score">Best scored</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Section</span>
+    <div class="dd" id="ddHypeSections">
+      <button class="dd-btn" id="ddHypeSectionsBtn" type="button">All sections</button>
+      <div class="dd-menu">
+        <div class="dd-menu-actions">
+          <button data-act="hype-sec-all">All</button>
+          <button data-act="hype-sec-none">None</button>
+        </div>
+        <div class="dd-options" id="hypeSectionOptions"></div>
+      </div>
+    </div>
+  </div>
+  <div class="updated" id="hypeUpdated"></div>
+</div>
+<div class="hype-banner hidden" id="hypeBanner"></div>
+<div class="hype-list hidden" id="hypeList"></div>
+
 <div id="tip"></div>
 
 <script>
+// ============================================================
+// Feature flags — flip these to re-enable in-flight features.
+// ============================================================
+// Hype tab is still being built; hide it in production until the data
+// pipeline is ready.
+const HYPE_ENABLED = false;
+
 // ============================================================
 // Embedded fallback CSV — used if fetch() fails (e.g. file://)
 // ============================================================
@@ -1065,27 +1286,78 @@ let LOCATION_GROUPS_ALL = [];
 const PX_PER_MIN = 2.6;
 const HOUR_PX = 60 * PX_PER_MIN;
 
+// Ordered by where I'm actually likely to be: Palais first, then Le Cineum
+// (frequent destination), then the rest by walking distance from the Palais.
 const LOCATION_ORDER = [
-  "Grand Théâtre Lumière","Salle Debussy","Salle Bazin","Salle Buñuel","Salle Agnès Varda",
-  "Théâtre Croisette","Espace Miramar","Olympia","Le Cineum IMAX","Le Cineum Aurore",
-  "Le Cineum Salle 3","Le Cineum Screen X","Alexandre III","Les Arcades","Le Raimu",
-  "Studio 13","Plage Macé Brigitte Bardot",
+  // ── Inside the Palais des Festivals (seconds between rooms) ──
+  "Grand Théâtre Lumière",
+  "Salle Debussy",
+  "Salle Bazin",
+  "Salle Buñuel",
+  "Salle Agnès Varda",
+  // ── Le Cineum (La Bocca, shuttle ~15-20 min from Palais) ──
+  "Le Cineum IMAX",
+  "Le Cineum Aurore",
+  "Le Cineum Salle 3",
+  "Le Cineum Screen X",
+  // ── 1-3 min walk from Palais (old-town side, just inland) ──
+  "Olympia",
+  "Les Arcades",
+  // ── 5-12 min walk east along the Croisette ──
+  "Théâtre Croisette",
+  "Plage Macé Brigitte Bardot",
+  "Espace Miramar",
+  // ── 10-15 min walk inland from Palais (Bd Alexandre III area) ──
+  "Alexandre III",
+  // ── Western Cannes / Picaud (15-20 min walk or 10 min bus) ──
+  "Studio 13",
+  // ── La Bocca (also shuttle territory) ──
+  "Le Raimu",
 ];
 
-const filterState = {
-  sections:   new Set(),  // populated after CSV load
-  locations:  new Set(),
-  timeFrom:   null,
-  timeTo:     null,
-  search:     '',
+// Short travel-time hint shown under each venue name on the Y axis.
+const VENUE_NOTES = {
+  "Grand Théâtre Lumière":      "Palais",
+  "Salle Debussy":              "Palais",
+  "Salle Bazin":                "Palais",
+  "Salle Buñuel":               "Palais",
+  "Salle Agnès Varda":          "Palais",
+  "Olympia":                    "~2 min walk",
+  "Les Arcades":                "~2 min walk",
+  "Théâtre Croisette":          "~5 min · Croisette",
+  "Plage Macé Brigitte Bardot": "~10 min · beach",
+  "Espace Miramar":             "~10 min · Croisette",
+  "Alexandre III":              "~12 min walk",
+  "Studio 13":                  "~20 min · Picaud",
+  "Le Raimu":                   "La Bocca · shuttle",
+  "Le Cineum IMAX":             "La Bocca · shuttle",
+  "Le Cineum Aurore":           "La Bocca · shuttle",
+  "Le Cineum Salle 3":          "La Bocca · shuttle",
+  "Le Cineum Screen X":         "La Bocca · shuttle",
 };
 
-let currentView = 'all';      // 'all' | 'schedule'
+const filterState = {
+  sections:       new Set(),  // populated after CSV load
+  locations:      new Set(),
+  timeFrom:       null,
+  timeTo:         null,
+  search:         '',
+  interestedOnly: false,
+};
+
+let currentView = 'all';      // 'all' | 'schedule' | 'hype'
 let currentDate = null;
 let scheduleMode = 'list';    // 'list' | 'gantt'
 let scheduleDate = null;      // selected day inside the schedule gantt view
 
-// localStorage-backed picks
+// Hype data + UI state
+let HYPE_DOC = { lastUpdated: null, films: [] };
+const hypeState = {
+  sort: 'buzz',                 // buzz | under | premiere | score
+  sections: new Set(),          // Sections enabled in the Hype filter
+};
+
+// localStorage-backed picks (per-screening) and interest marks (per-film).
 const STORE_KEY = 'cannes_my_schedule_v1';
 function loadPicks() {
   try { return new Set(JSON.parse(localStorage.getItem(STORE_KEY) || '[]')); }
@@ -1096,6 +1368,33 @@ function savePicks() {
   catch (e) { console.warn('localStorage unavailable, picks will not persist:', e); }
 }
 let mySchedule = loadPicks();
+
+const INTEREST_KEY = 'cannes_interested_films_v1';
+function loadInterested() {
+  try { return new Set(JSON.parse(localStorage.getItem(INTEREST_KEY) || '[]')); }
+  catch { return new Set(); }
+}
+function saveInterested() {
+  try { localStorage.setItem(INTEREST_KEY, JSON.stringify([...interestedFilms])); }
+  catch (e) { console.warn('localStorage unavailable:', e); }
+}
+let interestedFilms = loadInterested();
+
+function makeHeartButton(filmTitle, opts = {}) {
+  const btn = document.createElement('div');
+  const isOn = interestedFilms.has(filmTitle);
+  btn.className = (opts.className || 'heart') + (isOn ? ' on' : '');
+  btn.textContent = isOn ? '♥' : '♡';
+  btn.title = 'Toggle interest in this film';
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    if (interestedFilms.has(filmTitle)) interestedFilms.delete(filmTitle);
+    else interestedFilms.add(filmTitle);
+    saveInterested();
+    render();
+  });
+  return btn;
+}
 
 // ============================================================
 // CSV loader: try fetch first (works on http://, GitHub Pages),
@@ -1117,11 +1416,23 @@ async function loadCSV() {
   return EMBEDDED_CSV;
 }
 
+// Fetches hype.json. If unavailable (e.g. file:// or not yet committed),
+// returns an empty doc so the tab still renders an informative empty state.
+async function loadHype() {
+  if (!HYPE_ENABLED) return { lastUpdated: null, films: [] };
+  try {
+    const res = await fetch('./hype.json', { cache: 'no-cache' });
+    if (res.ok) return await res.json();
+  } catch (e) { /* fall through */ }
+  return { lastUpdated: null, films: [] };
+}
+
 // ============================================================
 // Init
 // ============================================================
 (async function init() {
-  const text = await loadCSV();
+  const [text, hype] = await Promise.all([loadCSV(), loadHype()]);
+  HYPE_DOC = hype;
   ALL_ROWS = parseCSV(text);
   ALL_ROWS.forEach(r => {
     r.startMin = parseTime(r.Time);
@@ -1164,9 +1475,19 @@ async function loadCSV() {
   // Initialize filter state to "everything on"
   filterState.sections  = new Set(ALL_SECTIONS);
   filterState.locations = new Set(LOCATION_GROUPS_ALL);
+  hypeState.sections    = new Set(ALL_SECTIONS);
 
   buildDayButtons();
   bindFilterActions();
+  bindHypeControls();
+
+  // Hype is hidden behind a feature flag while the data pipeline is in flight.
+  if (!HYPE_ENABLED) {
+    const hypeTab = document.querySelector('.tab[data-view="hype"]');
+    if (hypeTab) hypeTab.style.display = 'none';
+    if (currentView === 'hype') currentView = 'all';
+  }
+
   render();
 })();
 
@@ -1264,6 +1585,12 @@ function bindFilterActions() {
   // Search
   document.getElementById('searchInput').addEventListener('input', e => {
     filterState.search = e.target.value.trim().toLowerCase();
+    render();
+  });
+
+  // Interest toggle
+  document.getElementById('interestToggle').addEventListener('click', () => {
+    filterState.interestedOnly = !filterState.interestedOnly;
     render();
   });
 }
@@ -1375,12 +1702,266 @@ function setupDropdowns() {
   };
   setup('ddSectionsBtn', 'ddSections');
   setup('ddLocationsBtn', 'ddLocations');
+  setup('ddHypeSectionsBtn', 'ddHypeSections');
   // Click anywhere else to close
   document.addEventListener('click', e => {
     if (!e.target.closest('.dd')) {
       document.querySelectorAll('.dd.open').forEach(d => d.classList.remove('open'));
     }
   });
+}
+
+// ============================================================
+// Hype tab controls + rendering
+// ============================================================
+function bindHypeControls() {
+  document.getElementById('hypeSort').addEventListener('change', e => {
+    hypeState.sort = e.target.value; render();
+  });
+  // Quick actions for the Hype section dropdown
+  document.querySelectorAll('[data-act="hype-sec-all"]').forEach(b =>
+    b.addEventListener('click', e => {
+      e.stopPropagation();
+      hypeState.sections = new Set(ALL_SECTIONS); render();
+    }));
+  document.querySelectorAll('[data-act="hype-sec-none"]').forEach(b =>
+    b.addEventListener('click', e => {
+      e.stopPropagation();
+      hypeState.sections = new Set(); render();
+    }));
+}
+
+// Compute the earliest screening date (dispDate) per film title, used by
+// the "Soonest premiere" sort and for showing premiere date on each card.
+function premiereDateOf(title) {
+  let best = null;
+  ALL_ROWS.forEach(r => {
+    if (r['Film Title'] !== title) return;
+    if (!best || r.dispDate < best) best = r.dispDate;
+  });
+  return best;
+}
+
+function buzzClass(b)  { return b === 'high' ? 'high' : b === 'medium' ? 'medium' : b === 'low' ? 'low' : 'none'; }
+function buzzLabel(b)  { return b === 'high' ? '🔥 High buzz' : b === 'medium' ? 'Medium buzz' : b === 'low' ? 'Quiet so far' : 'No coverage yet'; }
+
+function rebuildHypeSectionDropdown() {
+  // Show all sections present in the schedule (the Hype tab spans all days)
+  const opts = document.getElementById('hypeSectionOptions');
+  const btn  = document.getElementById('ddHypeSectionsBtn');
+  opts.innerHTML = '';
+  ALL_SECTIONS.forEach(sec => {
+    const col = SECTION_COLORS[sec] || DEFAULT_COLOR;
+    const opt = document.createElement('div');
+    opt.className = 'dd-option' + (hypeState.sections.has(sec) ? ' checked' : '');
+    opt.innerHTML = `<div class="dd-check"></div><span class="dot" style="background:${col}"></span><span>${sec}</span>`;
+    opt.addEventListener('click', () => {
+      if (hypeState.sections.has(sec)) hypeState.sections.delete(sec);
+      else hypeState.sections.add(sec);
+      render();
+    });
+    opts.appendChild(opt);
+  });
+  btn.textContent = '';
+  const summary = summarizeSelection(ALL_SECTIONS, hypeState.sections, 'sections', 'sections');
+  btn.appendChild(document.createTextNode(summary));
+  const sel = ALL_SECTIONS.filter(s => hypeState.sections.has(s)).length;
+  if (sel > 0 && sel < ALL_SECTIONS.length) {
+    const pill = document.createElement('span');
+    pill.className = 'pill';
+    pill.textContent = sel;
+    btn.appendChild(pill);
+  }
+}
+
+function renderHypeView() {
+  rebuildHypeSectionDropdown();
+
+  // "Updated" header
+  const updEl = document.getElementById('hypeUpdated');
+  if (HYPE_DOC.lastUpdated) {
+    const d = new Date(HYPE_DOC.lastUpdated);
+    const ageH = (Date.now() - d.getTime()) / 36e5;
+    const text = `Updated ${d.toLocaleString()}`;
+    updEl.textContent = text;
+    updEl.classList.toggle('stale', ageH > 24);
+  } else {
+    updEl.textContent = 'Not yet updated';
+    updEl.classList.add('stale');
+  }
+
+  // Banner explaining the empty state when no scoring has been collected yet.
+  const banner = document.getElementById('hypeBanner');
+  const anyScored = HYPE_DOC.films.some(f =>
+    f.buzzScore != null || (f.scores && (f.scores.letterboxd || f.scores.metacritic || f.scores.rottenTomatoesCritic)));
+  if (!anyScored) {
+    banner.classList.remove('hidden');
+    banner.innerHTML = `
+      <strong>No hype data yet.</strong>
+      Showing all films alphabetically. The agent will populate review scores
+      and buzz signals during the festival from Letterboxd, the trade press
+      (Variety / Deadline / Hollywood Reporter / IndieWire), Rotten Tomatoes,
+      and Metacritic. See README for setup.`;
+  } else {
+    banner.classList.add('hidden');
+  }
+
+  const stats = document.getElementById('stats');
+  stats.textContent = `${HYPE_DOC.films.length} film${HYPE_DOC.films.length===1?'':'s'} tracked`;
+
+  // Filter and sort
+  const films = HYPE_DOC.films
+    .filter(f => hypeState.sections.has(f.section))
+    .map(f => ({ ...f, _premiere: premiereDateOf(f.title) }));
+
+  const cmpBuzz = (a, b) => (b.buzzScore || -1) - (a.buzzScore || -1) || a.title.localeCompare(b.title);
+  const cmpScore = (a, b) => bestScore(b) - bestScore(a) || a.title.localeCompare(b.title);
+  const cmpPrem  = (a, b) => (a._premiere || 'z').localeCompare(b._premiere || 'z') || a.title.localeCompare(b.title);
+
+  if      (hypeState.sort === 'buzz')     films.sort(cmpBuzz);
+  else if (hypeState.sort === 'score')    films.sort(cmpScore);
+  else if (hypeState.sort === 'premiere') films.sort(cmpPrem);
+  else if (hypeState.sort === 'under') {
+    films.sort((a, b) => {
+      const au = a.underRadar ? 1 : 0, bu = b.underRadar ? 1 : 0;
+      if (au !== bu) return bu - au;
+      return cmpBuzz(a, b);
+    });
+  }
+
+  // Render
+  const list = document.getElementById('hypeList');
+  list.innerHTML = '';
+  if (films.length === 0) {
+    list.innerHTML = `<div class="hype-empty-state">No films match the current filters.</div>`;
+    return;
+  }
+  films.forEach(f => list.appendChild(renderHypeCard(f)));
+}
+
+function bestScore(f) {
+  const s = f.scores || {};
+  // Normalize each available source to 0-100 and take the max.
+  const candidates = [];
+  if (s.letterboxd != null)             candidates.push(s.letterboxd * 20);
+  if (s.metacritic != null)             candidates.push(s.metacritic);
+  if (s.rottenTomatoesCritic != null)   candidates.push(s.rottenTomatoesCritic);
+  if (s.rottenTomatoesAudience != null) candidates.push(s.rottenTomatoesAudience);
+  return candidates.length ? Math.max(...candidates) : -1;
+}
+
+function renderHypeCard(f) {
+  const card = document.createElement('div');
+  card.className = 'hype-card' + (interestedFilms.has(f.title) ? ' interested' : '');
+  const stripe = document.createElement('div');
+  stripe.className = 'hype-stripe';
+  stripe.style.background = SECTION_COLORS[f.section] || DEFAULT_COLOR;
+  card.appendChild(stripe);
+
+  const content = document.createElement('div');
+  content.className = 'hype-content';
+
+  // Row 1: title + director + heart (interest toggle)
+  const row1 = document.createElement('div');
+  row1.className = 'hype-row1';
+  row1.innerHTML = `<span class="hype-title">${f.title}</span>` +
+                   (f.director ? `<span class="hype-director">${f.director}</span>` : '');
+  row1.appendChild(makeHeartButton(f.title, { className: 'heart-btn' }));
+  content.appendChild(row1);
+
+  // Row 2: section + premiere date
+  const meta = document.createElement('div');
+  meta.className = 'hype-meta';
+  const col = SECTION_COLORS[f.section] || DEFAULT_COLOR;
+  const premiere = f._premiere ? `Premieres ${dayLabel(f._premiere)}` : '';
+  meta.innerHTML = `<span><span class="section-tag" style="background:${col}"></span>${f.section}</span>` +
+                   (premiere ? `<span class="sep"></span><span>${premiere}</span>` : '');
+  content.appendChild(meta);
+
+  // Scores
+  const scoresEl = document.createElement('div');
+  scoresEl.className = 'hype-scores';
+  const s = f.scores || {};
+  scoresEl.appendChild(scoreChip('LB', s.letterboxd != null ? s.letterboxd.toFixed(1) : null));
+  scoresEl.appendChild(scoreChip('Meta', s.metacritic != null ? s.metacritic : null));
+  scoresEl.appendChild(scoreChip('RT', s.rottenTomatoesCritic != null ? s.rottenTomatoesCritic + '%' : null));
+  content.appendChild(scoresEl);
+
+  // Buzz pill (with rationale if present)
+  const buzzPill = document.createElement('div');
+  const isUnder = !!f.underRadar;
+  if (isUnder) {
+    buzzPill.className = 'hype-buzz under';
+    buzzPill.textContent = '✨ Under the radar';
+  } else {
+    buzzPill.className = 'hype-buzz ' + buzzClass(f.buzz);
+    buzzPill.textContent = buzzLabel(f.buzz);
+  }
+  if (f.rationale) {
+    const r = document.createElement('span');
+    r.className = 'hype-rationale with-buzz';
+    r.textContent = '— ' + f.rationale;
+    buzzPill.appendChild(r);
+  }
+  content.appendChild(buzzPill);
+
+  // Reviews (top 3)
+  const reviews = (f.reviews || []).slice(0, 3);
+  if (reviews.length) {
+    const rEl = document.createElement('div');
+    rEl.className = 'hype-reviews';
+    reviews.forEach(r => {
+      const verdict = r.verdict || 'mixed';
+      const div = document.createElement('div');
+      div.className = 'review ' + verdict;
+      const linkOpen  = r.url ? `<a href="${r.url}" target="_blank" rel="noopener">` : '';
+      const linkClose = r.url ? '</a>' : '';
+      div.innerHTML = `&ldquo;${r.snippet}&rdquo; <span class="review-source">${linkOpen}— ${r.source}${linkClose}</span>`;
+      rEl.appendChild(div);
+    });
+    content.appendChild(rEl);
+  }
+
+  // Screenings (all of them, with stars to add to schedule)
+  const screenings = ALL_ROWS
+    .filter(r => r['Film Title'] === f.title)
+    .sort((a, b) => a.dispDate.localeCompare(b.dispDate) || a.dispStartMin - b.dispStartMin);
+  if (screenings.length) {
+    const wrap = document.createElement('div');
+    wrap.className = 'hype-screenings';
+    const head = document.createElement('div');
+    head.className = 'hype-screenings-head';
+    head.textContent = `${screenings.length} screening${screenings.length===1?'':'s'}`;
+    wrap.appendChild(head);
+    screenings.forEach(r => {
+      const row = document.createElement('div');
+      row.className = 'hype-screening';
+      const isOn = mySchedule.has(r.id);
+      row.innerHTML =
+        `<span class="when">${dayLabel(r.dispDate)} ${r.Time}</span>` +
+        `<span class="where">${r.Location}</span>` +
+        `<span class="star${isOn?' on':''}" title="Toggle in My Schedule">${isOn?'★':'☆'}</span>`;
+      row.querySelector('.star').addEventListener('click', e => {
+        e.stopPropagation();
+        if (mySchedule.has(r.id)) mySchedule.delete(r.id);
+        else mySchedule.add(r.id);
+        savePicks();
+        render();
+      });
+      wrap.appendChild(row);
+    });
+    content.appendChild(wrap);
+  }
+
+  card.appendChild(content);
+  return card;
+}
+
+function scoreChip(label, value) {
+  const c = document.createElement('div');
+  c.className = 'score-chip' + (value == null ? ' empty' : '');
+  c.innerHTML = `<span class="score-label">${label}</span><span class="score-value">${value == null ? '—' : value}</span>`;
+  return c;
 }
 
 // ============================================================
@@ -1426,18 +2007,31 @@ function render() {
     t.classList.toggle('active', t.dataset.view === currentView));
   document.getElementById('picksCount').textContent = mySchedule.size;
 
+  // Interest toggle button visual + count
+  const it = document.getElementById('interestToggle');
+  if (it) {
+    it.classList.toggle('on', filterState.interestedOnly);
+    document.getElementById('interestCount').textContent =
+      interestedFilms.size ? `(${interestedFilms.size})` : '';
+  }
+
   // Show/hide bits per view
   const showAll      = currentView === 'all';
   const showSchedule = currentView === 'schedule';
+  const showHype     = currentView === 'hype';
   document.getElementById('filtersBar').classList.toggle('hidden', !showAll);
-  document.getElementById('legend').classList.toggle('hidden', !showAll && scheduleMode === 'list');
+  document.getElementById('legend').classList.toggle('hidden',
+    showHype || (showSchedule && scheduleMode === 'list'));
   document.getElementById('chartWrap').classList.toggle('hidden',
-    showSchedule && scheduleMode === 'list');
+    showHype || (showSchedule && scheduleMode === 'list'));
   document.getElementById('scheduleList').classList.toggle('hidden',
     !(showSchedule && scheduleMode === 'list'));
   document.getElementById('scheduleMode').classList.toggle('hidden', !showSchedule);
+  document.getElementById('hypeToolbar').classList.toggle('hidden', !showHype);
+  document.getElementById('hypeBanner').classList.toggle('hidden', !showHype);
+  document.getElementById('hypeList').classList.toggle('hidden', !showHype);
 
-  // Day buttons: "all" view always; "schedule + gantt" only days with picks
+  // Day buttons: "all" view always; "schedule + gantt" only days with picks; "hype" hides them
   const dayBtnsRoot = document.getElementById('dayButtons');
   if (showAll) {
     dayBtnsRoot.classList.remove('hidden');
@@ -1445,7 +2039,7 @@ function render() {
       b.disabled = false;
       b.classList.toggle('active', b.dataset.date === currentDate);
     });
-  } else if (scheduleMode === 'gantt') {
+  } else if (showSchedule && scheduleMode === 'gantt') {
     dayBtnsRoot.classList.remove('hidden');
     const daysWithPicks = new Set(ALL_ROWS.filter(r => mySchedule.has(r.id)).map(r => r.dispDate));
     if (!daysWithPicks.has(scheduleDate)) {
@@ -1464,9 +2058,11 @@ function render() {
 
   if (showAll) {
     renderAllView();
-  } else {
+  } else if (showSchedule) {
     if (scheduleMode === 'list') renderScheduleList();
     else renderScheduleGantt();
+  } else {
+    renderHypeView();
   }
 }
 
@@ -1482,6 +2078,7 @@ function renderAllView() {
   const dayRows = allDayRows.filter(r => {
     if (!filterState.sections.has(r.Section)) return false;
     if (!filterState.locations.has(locationGroup(r.Location))) return false;
+    if (filterState.interestedOnly && !interestedFilms.has(r['Film Title'])) return false;
     // Time filter compares against the *displayed* position so midnight
     // screenings (now at >24:00 on the previous day) line up with the chart.
     if (filterState.timeFrom != null && r.dispStartMin < filterState.timeFrom) return false;
@@ -1687,7 +2284,16 @@ function drawChart(rows) {
     const yCell = document.createElement('div');
     yCell.className = 'y-cell';
     yCell.style.height = laneHeight + 'px';
-    yCell.textContent = loc;
+    const nameEl = document.createElement('div');
+    nameEl.className = 'y-cell-name';
+    nameEl.textContent = loc;
+    yCell.appendChild(nameEl);
+    if (VENUE_NOTES[loc]) {
+      const noteEl = document.createElement('div');
+      noteEl.className = 'y-cell-note';
+      noteEl.textContent = VENUE_NOTES[loc];
+      yCell.appendChild(noteEl);
+    }
     yAxis.appendChild(yCell);
 
     // Lane
@@ -1713,7 +2319,10 @@ function drawChart(rows) {
       const color = SECTION_COLORS[r.Section] || DEFAULT_COLOR;
 
       const bar = document.createElement('div');
-      bar.className = 'bar' + (mySchedule.has(r.id) ? ' saved' : '');
+      const isInterested = interestedFilms.has(r['Film Title']);
+      bar.className = 'bar'
+        + (mySchedule.has(r.id) ? ' saved' : '')
+        + (isInterested ? ' interested' : '');
       bar.style.cssText = `left:${left}px;width:${width}px;top:${top}px;height:${height}px;background:${color};`;
 
       const titleEl = document.createElement('div');
@@ -1738,8 +2347,12 @@ function drawChart(rows) {
         render();
       });
 
+      // Heart (toggle interest in this film — applies to all its screenings)
+      const heart = makeHeartButton(r['Film Title']);
+
       bar.appendChild(titleEl);
       bar.appendChild(metaEl);
+      bar.appendChild(heart);
       bar.appendChild(star);
 
       // Hover for desktop, click/tap to pin for mobile.
